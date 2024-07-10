@@ -142,9 +142,9 @@ data/samples/*.npz
 data/samples/*.npy
 *.npy
 *.npz
-# !scripts/samples/BBN_only/*.npz
-# !scripts/samples/CMB_only/*.npz
-# !scripts/samples/Joint_analyses/*.npz
+!scripts/samples/BBN_only/*.npz
+!scripts/samples/CMB_only/*.npz
+!scripts/samples/Joint_analyses/*.npz
 
 # Run logs and artifacts
 data/logs/mlruns*
