@@ -1,10 +1,10 @@
 # LINX
- - Installation
-     - Troubleshooting
-     - CLASS and plik
- - Repository Structure
- - Citation
- - References
+ - [Installation](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#installation)
+     - [Troubleshooting](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#troubleshooting)
+     - [CLASS and plik](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#class-and-plik)
+ - [Repository Structure](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#repository-structure)
+ - [Citation](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#citation)
+ - [References](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#references)
 
 Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensible code that can be used to predict primordial light element abundances during Big Bang Nucleosynthesis (BBN).  LINX is written in python using JAX, and is readable, accessible, and well-documented.
 
