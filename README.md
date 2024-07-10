@@ -1,10 +1,10 @@
 # LINX
- - Installation
-     - Troubleshooting
-     - CLASS and plik
- - Repository Structure
- - Citation
- - References
+ - [Installation](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#installation)
+     - [Troubleshooting](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#troubleshooting)
+     - [CLASS and plik](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#class-and-plik)
+ - [Repository Structure](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#repository-structure)
+ - [Citation](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#citation)
+ - [References](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#references)
 
 Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensible code that can be used to predict primordial light element abundances during Big Bang Nucleosynthesis (BBN).  LINX is written in python using JAX, and is readable, accessible, and well-documented.
 
@@ -87,11 +87,8 @@ These instructions did not work for everyone who tested our code on an M3 Mac--i
 Some analysis files in this repository depend on the user having installed CLASS and clik.  Installation instructions are available for each of these codes: [CLASS](https://lesgourg.github.io/class_public/class.html), [clik](https://github.com/brinckmann/montepython_public#the-planck-likelihood-part).  Note that some users have reported issues using clik with python 3.12--we will not maintain this note to check if this compatibility issue is resolved, but if you have difficulty installing clik you might try to install with python 3.11.
 
 ## Repository structure
+
 Modules of the code are contained in the `linx` directory, along with the various sets of BBN reaction rates that ship with LINX.  
-
-`test_scripts` contains a suite of scripts intended for testing and validating LINX.  The `test_SBBN` scripts test "standard BBN", or BBN in LCDM cosmology, using a truncated reaction network.  This reaction network is the minimal network required for accurate deuterium and helium-4 predictions, and these two test scripts compare the LINX results for this network against results from PRIMAT and PRyMordial.  The `test_full_network` scripts are similar, but test the full network instead of the truncated network.
-
-Inside `test_scripts`, `pytest` contains brief pytest scripts for continuous checking of this repository.  You can run them yourself by navigating into the directory and running `pytest .` (after pip installing pytest).
 
 `example_notebooks` contains a set of Jupyter noteboooks intended to be a pedagogical reference for users familiarizing themselves with LINX.  
 * background_evolution explores the thermodynamic calculation performed in LINX to determine quantities like energy densities and Hubble.  It includes a comparison of the LINX Neff results with other results in the literature.
@@ -102,11 +99,15 @@ Inside `test_scripts`, `pytest` contains brief pytest scripts for continuous che
 * inference_omega_b provides a toy example of parameter inference with LINX, with a profile likelihood test.
 * scan_over_Omega_b_tau_n includes a scan over two parameters, both the baryon density and the neutron lifetime.
 
-`analysis_scripts` contains a set of python scripts and batch scripts used for the analyses in our analysis paper (coming soon!).  If you plan to run these scripts on a cluster, the batch scripts may need to be tweaked for your cluster's configuration (e.g. the NYU Greene cluster, on which these analyses were run, requires the use of singularity containers, and so the syntax for calling the script may look strange).  The CMB_BBN script also requires the user to have installed CLASS and clik.
+`scripts` contains a suite of scripts for testing and using LINX.
 
-This directory also contains a subdirectory called `samples` and a jupyter notebook called `example_analysis`.  These include our data in our analysis paper (coming soon!) and brief examples of how to unpack and view the data (requires the user to have `corner` installed).
+* test scripts: The `test_SBBN` scripts test "standard BBN", or BBN in LCDM cosmology, using a truncated reaction network.  This reaction network is the minimal network required for accurate deuterium and helium-4 predictions, and these two test scripts compare the LINX results for this network against results from PRIMAT and PRyMordial.  The `test_full_network` scripts are similar, but test the full network instead of the truncated network.
+* Analysis scripts: A set of python scripts and batch scripts used for the analyses in our analysis paper (coming soon!).  These are the scripts that begin with `BBN_only...` or `CMB_BBN...`.  If you plan to run these scripts on a cluster, the batch scripts may need to be tweaked for your cluster's configuration (e.g. the NYU Greene cluster, on which these analyses were run, requires the use of singularity containers, and so the syntax for calling the script may look strange).  The CMB_BBN script also requires the user to have installed CLASS and clik.
+* `run_numpyro.py`: a script used to perform a Stochastic Variational Inference (SVI) analysis with LINX and [CosmoPower](https://arxiv.org/abs/2106.03846) in our formalism paper (coming soon!).  Running this scripts requires the user to have installed CosmoPower.
 
-`SVI_scripts` contains the scripts we used to perform a Stochastic Variational Inference (SVI) analysis with LINX and [CosmoPower](https://arxiv.org/abs/2106.03846) in our formalism paper (coming soon!).  Running these scripts requires the user to have installed CosmoPower.
+This directory also contains two subdirectories: `samples`, which includes the data in our analysis paper (coming soon!), and `related_notebooks`, which contain jupyter notebooks that outline how to analyze the data generated by these scripts and stored in `samples` (requires the user to have `corner` installed).
+
+Finally, `pytest` contains brief pytest scripts for continuous checking of this repository.  You can run them yourself by navigating into the directory and running `pytest .` (after pip installing pytest).
 
 
 ## Citation
