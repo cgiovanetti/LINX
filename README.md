@@ -104,7 +104,7 @@ Inside `test_scripts`, `pytest` contains brief pytest scripts for continuous che
 
 `analysis_scripts` contains a set of python scripts and batch scripts used for the analyses in our analysis paper (coming soon!).  If you plan to run these scripts on a cluster, the batch scripts may need to be tweaked for your cluster's configuration (e.g. the NYU Greene cluster, on which these analyses were run, requires the use of singularity containers, and so the syntax for calling the script may look strange).  The CMB_BBN script also requires the user to have installed CLASS and clik.
 
-This directory also contains a subdirectory called `samples` and a jupyter notebook called `example_analysis`.  These include our data in our analysis paper (coming soon!) and brief examples of how to unpack and view the data (requires the user to have `corner` installed).
+This directory also contains a subdirectory called `samples` and a jupyter notebook called `example_analysis`.  These include our data in our analysis paper (coming soon!) and brief examples of how to unpack and view the data (requires the user to have `corner` installed).  **Important:** The samples are somewhat large, taking up ~72MB of space, so they are not included in our `main` branch.  If you'd like to see the samples, pull the `samples` branch instead.
 
 `SVI_scripts` contains the scripts we used to perform a Stochastic Variational Inference (SVI) analysis with LINX and [CosmoPower](https://arxiv.org/abs/2106.03846) in our formalism paper (coming soon!).  Running these scripts requires the user to have installed CosmoPower.
 
