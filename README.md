@@ -1,15 +1,25 @@
-# LINX
- - [Installation](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#installation)
-     - [Troubleshooting](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#troubleshooting)
-     - [CLASS and plik](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#class-and-plik)
- - [Repository Structure](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#repository-structure)
- - [Citation](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#citation)
- - [References](https://github.com/cgiovanetti/LINX?tab=readme-ov-file#references)
+<h1 align="center">
+LINX<!-- omit from toc -->
+</h1>
+
+<h4 align="center">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
+[![arXiv](https://img.shields.io/badge/arXiv-240x.xxxxx%20-green.svg)](https://arxiv.org/abs/240x.xxxxx)
+[![Run Tests](https://github.com/cgiovanetti/LINX/actions/workflows/test.yml/badge.svg)](https://github.com/cgiovanetti/LINX/actions/workflows/test.yml)
+</h4>
 
 Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensible code that can be used to predict primordial light element abundances during Big Bang Nucleosynthesis (BBN).  LINX is written in python using JAX, and is readable, accessible, and well-documented.
 
-[![Run Tests](https://github.com/cgiovanetti/LINX/actions/workflows/test.yml/badge.svg)](https://github.com/cgiovanetti/LINX/actions/workflows/test.yml)
+## Contents<!-- omit from toc -->
 
+- [Installation](#installation)
+  - [Troubleshooting](#troubleshooting)
+  - [CLASS and plik](#class-and-plik)
+- [Repository structure](#repository-structure)
+- [Citation](#citation)
+- [References](#references)
+</center>
 
 ## Installation
 It is strongly recommended that you create a clean conda environment with the latest python. All of the requirements are included in `requirements.txt`.  In summary, run
