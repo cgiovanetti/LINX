@@ -10,59 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v2
-        with:
-          ref: main
-          path: main-branch
-
       - name: Checkout samples branch
         uses: actions/checkout@v2
         with:
           ref: samples
           path: samples-branch
 
-      - name: Ensure .gitignore for main branch
-        run: |
-          cd main-branch
-          echo "# Main branch .gitignore" > .gitignore
-          echo "some-pattern-to-ignore" >> .gitignore
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain)" ]; then
-            git add .gitignore
-            git commit -m "Ensure main branch .gitignore"
-            git push origin main
-          else
-            echo "No changes to .gitignore for main branch"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Ensure .gitignore for samples branch
-        run: |
-          cd samples-branch
-          echo "# Samples branch .gitignore" > .gitignore
-          echo "another-pattern-to-ignore" >> .gitignore
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain)" ]; then
-            git add .gitignore
-            git commit -m "Ensure samples branch .gitignore"
-            git push origin samples
-          else
-            echo "No changes to .gitignore for samples branch"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Merge main into samples without overwriting scripts/samples
         run: |
           cd samples-branch
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git pull origin main --no-commit --no-ff
+          # Fetch main branch
+          git fetch origin main
+          # Merge main into samples
+          git merge origin/main --allow-unrelated-histories --no-commit --no-ff
+          # Restore scripts/samples directory
           git restore --source=HEAD --staged --worktree -- scripts/samples
+          # Commit and push changes if there are any
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "Merge changes from main into samples, preserving scripts/samples directory"
