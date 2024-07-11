@@ -26,7 +26,7 @@ It is strongly recommended that you create a clean conda environment with the la
 ```
 conda create --name linx
 conda activate linx
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 (Include `path/to/requirements.txt` if you're in a different directory.)  Verify your JAX installation by opening up python in terminal and attempting to `import jax`. 
 
@@ -121,7 +121,7 @@ Finally, `pytest` contains brief pytest scripts for continuous checking of this 
 
 
 ## Citation
-If you use LINX, please cite both LINX and the other public codes upon which LINX depends.  This includes nudec_BSM (https://arxiv.org/abs/1812.05605, https://arxiv.org/pdf/2001.04466), PRIMAT (http://www2.iap.fr/users/pitrou/primat.htm), and PRyMordial (https://arxiv.org/abs/2307.07061).  
+If you use LINX, please cite both LINX and the other public codes with components utilized by LINX.  This includes nudec_BSM (https://arxiv.org/abs/1812.05605, https://arxiv.org/pdf/2001.04466), PRIMAT (http://www2.iap.fr/users/pitrou/primat.htm), and PRyMordial (https://arxiv.org/abs/2307.07061).  
 
 The suggested language for citation is "LINX [linx], which depends on methods, tables, and frameworks from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
 
