@@ -29,7 +29,7 @@ thermo_model_DNeff = BackgroundModel()
 
 (
     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec 
-) = thermo_model_DNeff(0.)
+) = thermo_model_DNeff(jnp.asarray(0.)) # need to pass as array for eqx.filter_jit
 
 abundance_model_PRIMAT_2023 = AbundanceModel(
     nucl.NuclearRates(nuclear_net='key_PRIMAT_2023')
@@ -117,18 +117,18 @@ print('Total time taken by LINX: ', end_time - start_time, ' seconds')
 
 start_time = time.time()
 
-(
-    t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec
-) = thermo_model_DNeff(3.)
+# (
+#     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec
+# ) = thermo_model_DNeff(3.)
 
 
 res = abundance_model_PRIMAT_2023(
-    jnp.array(rho_g_vec), 
-    jnp.array(rho_nu_vec), 
-    jnp.array(rho_NP_vec),
-    jnp.array(P_NP_vec),
-    t_vec=jnp.array(t_vec_ref),
-    a_vec=jnp.array(a_vec_ref),
+    rho_g_vec, 
+    rho_nu_vec, 
+    rho_NP_vec,
+    P_NP_vec,
+    t_vec=t_vec_ref,
+    a_vec=a_vec_ref, 
     rtol=1e-6,
     sampling_nTOp=150
 )
@@ -152,7 +152,7 @@ def get_m2LL(params):
     (
         t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, 
         Neff_vec
-    ) = thermo_model_DNeff(Delt_Neff)
+    ) = thermo_model_DNeff(jnp.asarray(Delt_Neff))
 
     P_NP_vec = rho_NP_vec / 3.
 

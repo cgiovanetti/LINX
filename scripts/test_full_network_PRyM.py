@@ -27,7 +27,7 @@ thermo_model_DNeff = BackgroundModel()
 
 (
     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec 
-) = thermo_model_DNeff(0.)
+) = thermo_model_DNeff(jnp.asarray(0.)) # need to pass as array for eqx.filter_jit
 
 abundance_model_key_PRIMAT_2018 = AbundanceModel(
     NuclearRates(nuclear_net='key_PRIMAT_2018')
@@ -137,7 +137,7 @@ start_time = time.time()
 
 (
     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec 
-) = thermo_model_DNeff(3.)
+) = thermo_model_DNeff(jnp.asarray(3.))
 
 
 
