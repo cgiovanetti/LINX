@@ -1,2 +1,4 @@
 # Ensure the scripts/samples directory always keeps the current branch's version
 scripts/samples merge=ours
+
+
