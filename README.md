@@ -100,7 +100,7 @@ Some analysis files in this repository depend on the user having installed CLASS
 
 Modules of the code are contained in the `linx` directory, along with the various sets of BBN reaction rates that ship with LINX.  
 
-`example_notebooks` contains a set of Jupyter noteboooks intended to be a pedagogical reference for users familiarizing themselves with LINX.  
+`example_notebooks` contains a set of pedagogical Jupyter noteboooks for users familiarizing themselves with LINX.  
 * background_evolution explores the thermodynamic calculation performed in LINX to determine quantities like energy densities and Hubble.  It includes a comparison of the LINX Neff results with other results in the literature.
 * NuisanceParametersImpact explores the impact of the uncertainties of BBN rates on final predicted abundances.  The ability to sample these nuisance parameters is a key feature of LINX.
 * weak_rates illustrates the impact of different settings for computing the rate of proton-neutron interconversion on the prediction for the primordial helium-4 abundance.
