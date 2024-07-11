@@ -40,7 +40,7 @@ pip install diffrax==0.4.1 jax==0.4.28 jaxlib==0.4.28
 (pip or conda can be used for `scipy`, `matplotlib`, `numpy`, and `jupyter`.)
 
 ### Troubleshooting
-The above instructions should work well on Intel-based PCs, Linux PCs, and Linux clusters.  Some Apple Silicon users report difficulty installing JAX, frequently receiving an error `This version of jaxlib was built using AVX instructions, which your CPU and/or operating system do not support. You may be able work around this issue by building jaxlib from source.`.  If the above installation instructions return errors related to JAX/jaxlib, we have compiled an unscientific set of troubleshooting suggestions.  If these also fail, we suggest you explore the [JAX GitHub](https://github.com/google/jax) for more community tips on installing JAX.
+The above instructions should work well on Intel-based PCs, Linux PCs, and Linux clusters.  Some Apple Silicon users report difficulty installing JAX.  If the above installation instructions return errors related to JAX/jaxlib, we have compiled an unscientific set of troubleshooting suggestions.  If these also fail, we suggest you explore the [JAX GitHub](https://github.com/google/jax) for more community tips on installing JAX.
 
 Please be sure to upgrade pip before proceeding!
 
