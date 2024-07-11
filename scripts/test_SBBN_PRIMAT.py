@@ -117,9 +117,9 @@ print('Total time taken by LINX: ', end_time - start_time, ' seconds')
 
 start_time = time.time()
 
-# (
-#     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec
-# ) = thermo_model_DNeff(3.)
+(
+    t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec
+) = thermo_model_DNeff(jnp.asarray(3.))
 
 
 res = abundance_model_PRIMAT_2023(

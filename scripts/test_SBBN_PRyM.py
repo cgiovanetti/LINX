@@ -152,7 +152,7 @@ def get_m2LL(params):
     (
         t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, 
         Neff_vec
-    ) = thermo_model_DNeff(Delt_Neff)
+    ) = thermo_model_DNeff(jnp.asarray(Delt_Neff))
 
     P_NP_vec = rho_NP_vec / 3.
 
