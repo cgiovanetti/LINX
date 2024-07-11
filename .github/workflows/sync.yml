@@ -1,0 +1,39 @@
+name: Sync Branches
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout samples branch
+        uses: actions/checkout@v2
+        with:
+          ref: samples
+          path: samples-branch
+
+      - name: Merge main into samples without overwriting scripts/samples
+        run: |
+          cd samples-branch
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # Fetch main branch
+          git fetch origin main
+          # Merge main into samples
+          git merge origin/main --allow-unrelated-histories --no-commit --no-ff
+          # Restore scripts/samples directory
+          git restore --source=HEAD --staged --worktree -- scripts/samples
+          # Commit and push changes if there are any
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Merge changes from main into samples, preserving scripts/samples directory"
+            git push origin samples
+          else
+            echo "No changes to commit"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

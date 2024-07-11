@@ -28,7 +28,7 @@ thermo_model_DNeff = BackgroundModel()
 
 (
     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec 
-) = thermo_model_DNeff(0.)
+) = thermo_model_DNeff(jnp.asarray(0.))
 
 abundance_model_PRIMAT_2018 = AbundanceModel(
     nucl.NuclearRates(nuclear_net='key_PRIMAT_2018')
@@ -116,9 +116,9 @@ print('Total time taken by LINX: ', end_time - start_time, ' seconds')
 
 start_time = time.time()
 
-# (
-#     t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec
-# ) = thermo_model_DNeff(0.)
+(
+    t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec
+) = thermo_model_DNeff(jnp.asarray(3.))
 
 
 res = abundance_model_PRIMAT_2018(
@@ -136,6 +136,7 @@ end_time = time.time()
 
 print('Total time taken by compiled single run: ', end_time - start_time, ' seconds')
 
+
 print('----------------------------')
 print('Testing Differentiability...')
 print('----------------------------')
@@ -151,7 +152,7 @@ def get_m2LL(params):
     (
         t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, 
         Neff_vec
-    ) = thermo_model_DNeff(Delt_Neff)
+    ) = thermo_model_DNeff(jnp.asarray(Delt_Neff))
 
     P_NP_vec = rho_NP_vec / 3.
 
