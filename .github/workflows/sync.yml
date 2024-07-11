@@ -36,6 +36,8 @@ jobs:
           else
             echo "No changes to .gitignore for main branch"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Ensure .gitignore for samples branch
         run: |
@@ -51,6 +53,8 @@ jobs:
           else
             echo "No changes to .gitignore for samples branch"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge main into samples without overwriting scripts/samples
         run: |
@@ -66,3 +70,5 @@ jobs:
           else
             echo "No changes to commit"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
