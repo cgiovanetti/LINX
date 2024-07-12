@@ -14,7 +14,6 @@ Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensi
 ## Contents<!-- omit from toc -->
 
 - [Installation](#installation)
-  - [Troubleshooting](#troubleshooting)
   - [CLASS and plik](#class-and-plik)
 - [Repository structure](#repository-structure)
 - [Citation](#citation)
@@ -38,6 +37,8 @@ conda install --yes scipy matplotlib numpy jupyter
 pip install diffrax==0.4.1 jax==0.4.28 jaxlib==0.4.28
 ```
 (pip or conda can be used for `scipy`, `matplotlib`, `numpy`, and `jupyter`.)
+
+If you have trouble installing JAX, we have a [troubleshooting document](https://github.com/cgiovanetti/LINX/blob/main/TROUBLESHOOTING.md) with some tips.
 
 ### CLASS and plik
 Some analysis files in this repository depend on the user having installed CLASS and clik.  Installation instructions are available for each of these codes: [CLASS](https://lesgourg.github.io/class_public/class.html), [clik](https://github.com/brinckmann/montepython_public#the-planck-likelihood-part).  Note that some users have reported issues using clik with python 3.12--we will not maintain this note to check if this compatibility issue is resolved, but if you have difficulty installing clik you might try to install with python 3.11.
