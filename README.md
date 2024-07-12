@@ -48,18 +48,18 @@ Some analysis files in this repository depend on the user having installed CLASS
 Modules of the code are contained in the `linx` directory, along with the various sets of BBN reaction rates that ship with LINX.  
 
 `example_notebooks` contains a set of pedagogical Jupyter noteboooks for users familiarizing themselves with LINX.  
-* background_evolution explores the thermodynamic calculation performed in LINX to determine quantities like energy densities and Hubble.  It includes a comparison of the LINX Neff results with other results in the literature.
-* NuisanceParametersImpact explores the impact of the uncertainties of BBN rates on final predicted abundances.  The ability to sample these nuisance parameters is a key feature of LINX.
-* weak_rates illustrates the impact of different settings for computing the rate of proton-neutron interconversion on the prediction for the primordial helium-4 abundance.
-* Schramm includes an example of a Schramm plot, or the primordial abundances as a function of the baryon density.  It includes examples with the truncated and full networks, as well as with nuclear rate uncertainties incorporated into the results.
-* nuclear_evolution examines the evolution of primordial abundances as a function of time during BBN.  It also includes a cool movie!
-* inference_omega_b provides a toy example of parameter inference with LINX, with a profile likelihood test.
-* scan_over_Omega_b_tau_n includes a scan over two parameters, both the baryon density and the neutron lifetime.
+* [background_evolution](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/background_evolution.ipynb) explores the thermodynamic calculation performed in LINX to determine quantities like energy densities and Hubble.  It includes a comparison of the LINX Neff results with other results in the literature.
+* [NuisanceParametersImpact](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/NuisanceParametersImpact.ipynb) explores the impact of the uncertainties of BBN rates on final predicted abundances.  The ability to sample these nuisance parameters is a key feature of LINX.
+* [weak_rates](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/weak_rates.ipynb) illustrates the impact of different settings for computing the rate of proton-neutron interconversion on the prediction for the primordial helium-4 abundance.
+* [Schramm](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/Schramm.ipynb) includes an example of a Schramm plot, or the primordial abundances as a function of the baryon density.  It includes examples with the truncated and full networks, as well as with nuclear rate uncertainties incorporated into the results.
+* [nuclear_evolution](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/nuclear_evolution.ipynb) examines the evolution of primordial abundances as a function of time during BBN.  It also includes a cool movie!
+* [inference_omega_b](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/inference_Omega_b.ipynb) provides a toy example of parameter inference with LINX, with a profile likelihood test.
+* [scan_over_Omega_b_tau_n](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/scan_over_Omega_b_tau_n.ipynb) includes a scan over two parameters, both the baryon density and the neutron lifetime.
 
 `scripts` contains a suite of scripts for testing and using LINX.
 
 * test scripts: The `test_SBBN` scripts test "standard BBN", or BBN in LCDM cosmology, using a truncated reaction network.  This reaction network is the minimal network required for accurate deuterium and helium-4 predictions, and these two test scripts compare the LINX results for this network against results from PRIMAT and PRyMordial.  The `test_full_network` scripts are similar, but test the full network instead of the truncated network.
-* Analysis scripts: A set of python scripts and batch scripts used for the analyses in our analysis paper (coming soon!).  These are the scripts that begin with `BBN_only...` or `CMB_BBN...`.  If you plan to run these scripts on a cluster, the batch scripts may need to be tweaked for your cluster's configuration (e.g. the NYU Greene cluster, on which these analyses were run, requires the use of singularity containers, and so the syntax for calling the script may look strange).  The CMB_BBN script also requires the user to have installed CLASS and clik.
+* Analysis scripts: A set of python scripts and batch scripts used for the analyses in our analysis paper (coming soon!).  These are the scripts that begin with `BBN_only...` or `CMB_BBN...`.  The CMB_BBN script requires the user to have installed CLASS and clik.
 * `run_numpyro.py`: a script used to perform a Stochastic Variational Inference (SVI) analysis with LINX and [CosmoPower](https://arxiv.org/abs/2106.03846) in our formalism paper (coming soon!).  Running this scripts requires the user to have installed CosmoPower.
 
 This directory also contains two subdirectories: `samples`, which includes the data in our analysis paper (coming soon!), and `related_notebooks`, which contain jupyter notebooks that outline how to analyze the data generated by these scripts and stored in `samples` (requires the user to have `corner` installed).  **Important:** The samples are somewhat large, taking up ~72MB of space, so they are not included in our `main` branch.  If you'd like to see the samples, pull the `samples` branch instead.
@@ -70,7 +70,7 @@ Finally, `pytest` contains brief pytest scripts for continuous checking of this 
 ## Citation
 If you use LINX, please cite both LINX and the other public codes with components utilized by LINX.  This includes nudec_BSM (https://arxiv.org/abs/1812.05605, https://arxiv.org/pdf/2001.04466), PRIMAT (http://www2.iap.fr/users/pitrou/primat.htm), and PRyMordial (https://arxiv.org/abs/2307.07061).  
 
-The suggested language for citation is "LINX [linx], which depends on methods, tables, and frameworks from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
+The suggested language for citation is "LINX [linx], which uses methods, tables, and frameworks from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
 
 ```
 @article{linx,
