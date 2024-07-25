@@ -29,27 +29,28 @@ jobs:
           git checkout samples
           git pull origin samples
 
-          # Save current state of samples directory
-          if [ -d "samples" ]; then
-            mv samples samples_temp
-          fi
+          # Create a temporary branch from samples
+          git checkout -b temp-sync-branch
 
-          # Merge main into samples, preferring main for all files except samples
+          # Merge main into the temporary branch, excluding the samples directory
           git merge -X theirs --no-commit origin/main
+          git reset HEAD samples
+          git checkout -- samples
 
-          # Restore samples directory
-          if [ -d "samples_temp" ]; then
-            rm -rf samples
-            mv samples_temp samples
+          # Check if there are any changes
+          if git diff --staged --quiet && git diff --quiet; then
+            echo "No changes to sync"
+            exit 0
           fi
 
-          # Stage all changes
-          git add .
+          # Commit changes if any
+          git commit -m "Sync samples with main, preserving samples directory"
 
-          # Commit if there are changes
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Sync samples with main, preserving samples directory"
-            git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} samples
-          fi
+          # Push changes to samples branch
+          git push origin temp-sync-branch:samples
+
+      - name: Cleanup
+        if: always()
+        run: |
+          git checkout main
+          git branch -D temp-sync-branch || true
