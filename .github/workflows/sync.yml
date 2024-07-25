@@ -1,4 +1,5 @@
-name: Sync main and samples branches
+
+name: Sync main-samples with main (preserving samples)
 
 on:
   push:
@@ -10,16 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-
-      - name: Sync main to samples
+          
+      - name: Sync main-samples with main
         run: |
           # Ensure we're on main and it's up to date
           git checkout main
@@ -34,10 +30,10 @@ jobs:
             mv samples samples_temp
           fi
 
-          # Merge main into samples, preferring main for all files except samples
+          # Merge main into main-samples, preferring main for all files except samples
           git merge -X theirs --no-commit origin/main
 
-          # Restore samples directory
+          # Restore samples directory from main-samples
           if [ -d "samples_temp" ]; then
             rm -rf samples
             mv samples_temp samples
@@ -50,6 +46,8 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Sync samples with main, preserving samples directory"
-            git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} samples
+            git commit -m "Sync main-samples with main, preserving samples"
           fi
+
+          # Push changes
+          git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} samples
