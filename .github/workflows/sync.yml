@@ -5,7 +5,7 @@ on:
     branches:
       - main
 
-# Add permissions to allow workflow modifications
+# Add permissions to allow workflow modifications and content changes
 permissions:
   contents: write
   workflows: write
@@ -37,10 +37,11 @@ jobs:
           # Create a temporary branch from samples
           git checkout -b temp-sync-branch
 
-          # Merge main into the temporary branch, excluding the scripts/samples directory and .github/workflows
+          # Merge main into the temporary branch
           git merge -X theirs --no-commit origin/main
-          git reset HEAD scripts/samples .github/workflows
-          git checkout -- scripts/samples .github/workflows
+
+          # Restore scripts/samples from samples branch
+          git checkout samples -- scripts/samples
 
           # Check if there are any changes
           if git diff --staged --quiet && git diff --quiet; then
@@ -49,7 +50,7 @@ jobs:
           fi
 
           # Commit changes if any
-          git commit -m "Sync samples with main, preserving scripts/samples directory and workflows"
+          git commit -m "Sync samples with main, preserving scripts/samples directory"
 
           # Push changes to samples branch
           git push origin temp-sync-branch:samples
