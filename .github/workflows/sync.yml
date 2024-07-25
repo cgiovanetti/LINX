@@ -5,11 +5,6 @@ on:
     branches:
       - main
 
-# Add permissions to allow workflow modifications and content changes
-permissions:
-  contents: write
-  workflows: write
-
 jobs:
   sync-branches:
     runs-on: ubuntu-latest
@@ -37,11 +32,10 @@ jobs:
           # Create a temporary branch from samples
           git checkout -b temp-sync-branch
 
-          # Merge main into the temporary branch
+          # Merge main into the temporary branch, excluding the scripts/samples directory
           git merge -X theirs --no-commit origin/main
-
-          # Restore scripts/samples from samples branch
-          git checkout samples -- scripts/samples
+          git reset HEAD scripts/samples
+          git checkout -- scripts/samples
 
           # Check if there are any changes
           if git diff --staged --quiet && git diff --quiet; then
