@@ -34,7 +34,8 @@ class BackgroundModel(eqx.Module):
 
     @eqx.filter_jit
     def __call__(
-        self, Delt_Neff_init, rtol=1e-8, atol=1e-10, 
+        self, Delt_Neff_init, T_start=const.T_start, 
+        T_end=const.T_end, rtol=1e-8, atol=1e-10, 
         solver=Tsit5(), max_steps=512
     ): 
         """ Calculate thermodynamics given a target delta Neff.
@@ -43,6 +44,11 @@ class BackgroundModel(eqx.Module):
         ----------
         Delt_Neff_init : float
             Target delta Neff.  Can be positive or negative.  
+        T_EM_init : float
+            Initial EM (and neutrino) temperature. Default is const.T_start. 
+        T_EM_end : float 
+            Final EM temperature to terminate integration at. Default is
+            const.T_end. 
         rtol : float, optional
             Relative tolerance of the abundance solver. Default is 1e-8.  
         atol : float, optional
@@ -79,7 +85,7 @@ class BackgroundModel(eqx.Module):
         print('Compiling thermodynamics model...')
 
         lna_init = 0. 
-        T_EM_init = const.T_start
+        T_EM_init = T_start
         T_nu_init = T_EM_init 
 
         rho_extra_init = (7/8) * (4/11)**(4/3) * (
@@ -90,7 +96,7 @@ class BackgroundModel(eqx.Module):
         
         def T_EM_check(state, **kwargs): 
 
-            return state.y[1] < const.T_end
+            return state.y[1] < T_end
             
         sol = diffeqsolve(
             ODETerm(self.dY), solver, args=(lna_init, rho_extra_init),
@@ -108,12 +114,11 @@ class BackgroundModel(eqx.Module):
         
         # These vectors always have max_steps entries so that jit and grad 
         # work but the solver stops before hitting max_steps. Find the last 
-        # legitimate step made by the solver, when T_g drops below const.T_end 
-        # * const.Kelvin_to_MeV.
+        # legitimate step made by the solver, when T_g drops below T_end.
 
         last_step_ind = jnp.max(
             jnp.argwhere(
-                sol.ys[1] <  const.T_end,
+                sol.ys[1] < T_end,
                 size=512
             )[:,0]
         )
