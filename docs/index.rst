@@ -6,9 +6,7 @@
 LINX documentation
 ==================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+LINX (Light Isotope Nucleosynthesis with JAX) is a fast, extensible, differentiable numerical code for predicting primordial element abundances during Big Bang Nucleosynthesis.
 
 
 .. toctree::
