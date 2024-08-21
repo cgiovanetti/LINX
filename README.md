@@ -9,7 +9,7 @@ LINX<!-- omit from toc -->
 [![Run Tests](https://github.com/cgiovanetti/LINX/actions/workflows/test.yml/badge.svg)](https://github.com/cgiovanetti/LINX/actions/workflows/test.yml)
 </h4>
 
-Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensible code that can be used to predict primordial light element abundances during Big Bang Nucleosynthesis (BBN).  LINX is written in python using JAX, and is readable, accessible, and well-documented.
+Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensible code that can be used to predict primordial light element abundances during Big Bang Nucleosynthesis (BBN).  LINX is written in python using JAX, and is readable, accessible, and well-documented.  Full documentation is available at [https://linx.readthedocs.io/en/latest/](https://linx.readthedocs.io/en/latest/).
 
 ## Contents<!-- omit from toc -->
 
