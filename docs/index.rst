@@ -15,7 +15,6 @@ LINX (Light Isotope Nucleosynthesis with JAX) is a fast, extensible, differentia
 
    abundances
    background
-   const
    nuclear
    reactions
    special_funcs
