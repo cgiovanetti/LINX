@@ -23,7 +23,9 @@ extensions = ['sphinx.ext.autodoc',]
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-autodoc_default_flags = ['members', 'undoc-members', 'special-members']
+autodoc_default_options = {
+    'special-members': '__init__, __call__'
+}
 
 
 
