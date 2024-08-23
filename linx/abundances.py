@@ -420,6 +420,23 @@ class AbundanceModel(eqx.Module):
 
     @eqx.filter_jit
     def Y_prime(self, t, Y, args):
+        """Returns :math:`dY_i/dt` for this abundance model. 
+
+        Parameters
+        ----------
+        t : float 
+            Time at which to evaluate :math:`dY_i/dt`.
+        Y : array
+            Array of abundances for evaluating :math:`dY_i/dt`. 
+        args : tuple of arrays
+            Other relevant information for evaluating the derivative. These are respectively, 0) an array of scale factors; 1) an array of times; 2) an array of EM sector temperatures; 3) an array representing the abscissa of EM sector temperatures for evaluating weak rates; 4) an array of n -> p rates to interpolate over; 5) an array of p -> n rates to interpolate over; 6) the rescaling factor for baryon-to-photon ratio ``eta_fac``; 7) the rescaling factor for neutron decay lifetime ``tau_n_fac`` and 8) the array rescaling nuclear rates, ``nuclear_rates_q``. 
+
+        Returns
+        -------
+        array
+            :math:`dY_i/dt` at the given time and at the present abundance levels.
+        
+        """
 
         a_vec_in    = args[0]
         t_vec_in    = args[1]
