@@ -17,6 +17,21 @@ rho_massless_FD_v = vmap(
 )
 
 class BackgroundModel(eqx.Module): 
+    """Background model.
+
+    Attributes
+    ----------
+    decoupled : bool, optional
+        Whether neutrinos are always decoupled. Default is ``False``.
+    use_FD : bool, optional
+        Whether to use Fermi-Dirac statistics for neutrinos, or a Maxwell-Boltzmann distribution. Default is ``True``.
+    collision_me : bool, optional
+        Finite electron mass correction in energy transfer collision terms. Default is ``True``.
+    LO : bool, optional
+        Whether to use leading order QED correction. Default is ``True``.
+    NLO : bool, optional
+        Whether to use next-to-leading order QED correction. Default is True.
+    """
 
     decoupled : bool
     use_FD : bool
