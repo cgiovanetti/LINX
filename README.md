@@ -74,7 +74,7 @@ Please feel free to open up an issue if you notice something is amiss in LINX.
 ## Citation
 If you use LINX, we suggest you cite both LINX and the other public codes that provide a foundation for LINX: nudec_BSM (https://arxiv.org/abs/1812.05605, https://arxiv.org/pdf/2001.04466), PRIMAT (http://www2.iap.fr/users/pitrou/primat.htm), and PRyMordial (https://arxiv.org/abs/2307.07061).  
 
-The suggested language for citation is "LINX [linx], which uses methods, tables, and frameworks from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
+The suggested language for citation is "LINX [linx], which uses methods and tables from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
 
 ```
 @article{linx,
