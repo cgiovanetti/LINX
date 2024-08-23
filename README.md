@@ -118,15 +118,18 @@ The suggested language for citation is "LINX [linx], which uses methods, tables,
    year={2018},
    month=sep, pages={1–66} }
 
-@misc{PRyM,
-      title={{PRyMordial}: The First Three Minutes, Within and Beyond the {S}tandard {M}odel}, 
-      author={Anne-Katherine Burns and Tim M. P. Tait and Mauro Valli},
-      year={2023},
-      eprint={2307.07061},
-      archivePrefix={arXiv},
-      primaryClass={hep-ph}
-      url={https://arxiv.org/abs/2307.07061}, 
-}
+@article{PRyM,
+    author = "Burns, Anne-Katherine and Tait, Tim M. P. and Valli, Mauro",
+    title = "{PRyMordial: the first three minutes, within and beyond the Standard Model}",
+    eprint = "2307.07061",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    reportNumber = "UCI-HEP-TR-2023-07, YITP-SB-2023-16",
+    doi = "10.1140/epjc/s10052-024-12442-0",
+    journal = "Eur. Phys. J. C",
+    volume = "84",
+    number = "1", pages = "86",
+    year = "2024" }
 ```
 
 ## References
