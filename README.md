@@ -16,6 +16,7 @@ Light Isotope Nucleosynthesis with JAX (LINX) is a fast, differentiable, extensi
 - [Installation](#installation)
   - [CLASS and plik](#class-and-plik)
 - [Repository structure](#repository-structure)
+- [Issues](#issues)
 - [Citation](#citation)
 - [References](#references)
 </center>
@@ -66,6 +67,9 @@ This directory also contains two subdirectories: `samples`, which includes the d
 
 Finally, `pytest` contains brief pytest scripts for continuous checking of this repository.  You can run them yourself by navigating into the directory and running `pytest .` (after pip installing pytest).
 
+
+## Issues
+Please feel free to open up an issue if you notice something is amiss in LINX.
 
 ## Citation
 If you use LINX, please cite both LINX and the other public codes with components utilized by LINX.  This includes nudec_BSM (https://arxiv.org/abs/1812.05605, https://arxiv.org/pdf/2001.04466), PRIMAT (http://www2.iap.fr/users/pitrou/primat.htm), and PRyMordial (https://arxiv.org/abs/2307.07061).  
