@@ -24,7 +24,7 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 autodoc_default_options = {
-    'special-members': '__init__, __call__'
+    'special-members': '__call__'
 }
 
 
