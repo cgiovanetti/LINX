@@ -22,13 +22,13 @@ class BackgroundModel(eqx.Module):
     Attributes
     ----------
     decoupled : bool, optional
-        Whether neutrinos are always decoupled. Default is ``False``.
+        Whether neutrinos are always decoupled. Default is `False`.
     use_FD : bool, optional
-        Whether to use Fermi-Dirac statistics for neutrinos, or a Maxwell-Boltzmann distribution. Default is ``True``.
+        Whether to use Fermi-Dirac statistics for neutrinos, or a Maxwell-Boltzmann distribution. Default is `True`.
     collision_me : bool, optional
-        Finite electron mass correction in energy transfer collision terms. Default is ``True``.
+        Finite electron mass correction in energy transfer collision terms. Default is `True`.
     LO : bool, optional
-        Whether to use leading order QED correction. Default is ``True``.
+        Whether to use leading order QED correction. Default is `True`.
     NLO : bool, optional
         Whether to use next-to-leading order QED correction. Default is True.
     """
@@ -53,41 +53,41 @@ class BackgroundModel(eqx.Module):
         T_end=const.T_end, rtol=1e-8, atol=1e-10, 
         solver=Tsit5(), max_steps=512
     ): 
-        """ Calculate thermodynamics given a target delta Neff.
+        """ Calculate thermodynamics given an initial :math:`\\Delta N_\\mathrm{eff}`.
 
         Parameters
         ----------
         Delt_Neff_init : float
-            Target delta Neff.  Can be positive or negative.  
+            Initial :math:`\\Delta N_\\mathrm{eff}`.  Can be positive or negative.  
         T_EM_init : float
-            Initial EM (and neutrino) temperature. Default is const.T_start. 
+            Initial EM (and neutrino) temperature. Default is `const.T_start`. 
         T_EM_end : float 
             Final EM temperature to terminate integration at. Default is
-            const.T_end. 
+            `const.T_end`. 
         rtol : float, optional
-            Relative tolerance of the abundance solver. Default is 1e-8.  
+            Relative tolerance of the abundance solver. Default is `1e-8`.  
         atol : float, optional
-            Absolute tolerance of the abundance solver. Default is 1e-10. 
+            Absolute tolerance of the abundance solver. Default is `1e-10`. 
         max_steps : int, optional
-            Maximum number of steps taken by the solver. Default is 4096. 
+            Maximum number of steps taken by the solver. Default is `4096`. 
             Increasing this slows down the code, while decreasing this could 
             mean that the solver cannot complete the solution. 
         solver : Diffrax ODE solver 
             The Diffrax ODE solver to use. A stiff solver is recommended. 
-            Default is the 3rd order Kvaerno solver. 
+            Default is the Tsitouras' 5/4 solver. 
 
         Returns
         -------
         t_vec : array_like
-            Times at which thermodynamics are saved.
+            Times in s at which thermodynamics are saved.
         a_vec : array_like
             Scale factor at each point in time.
         rho_g_vec : array_like
-            Energy density of photons at each point in time.
+            Energy density of photons in MeV^4 at each point in time.
         rho_nu_vec : array_like
-            Energy density of one species of neutrinos at each point in time.
+            Energy density of one species of neutrinos in MeV^4 at each point in time.
         rho_extra_vec : array_like
-            Energy density of extra species at each point in time.
+            Energy density in MeV^4 of extra species at each point in time.
         """
         print('`\\         /´  ||||        ||||  |||||     ||||  ||||   ||||')
         print(' /\\_______/\\   ||||        ||||  |||||||   ||||   |||| ||||') 
@@ -176,6 +176,21 @@ class BackgroundModel(eqx.Module):
     
     @eqx.filter_jit
     def dY(self, t, Y, args): 
+        """ Differential equation for background quantities. 
+
+        Parameters
+        ----------
+        t : float
+            Time in s.  
+        Y : tuple of floats
+            The values of :math:`\\log a`, :math:`T_\\gamma` and :math:`T_\\nu`. 
+        args : tuple of floats
+            The initial value of :math:`\\log a`, and the initial energy density in MeV^4 of the extra inert relativistic species.
+
+        Returns
+        -------
+        The time derivative of the quantities specified in `Y`. 
+        """
 
         lna, T_g, T_nu = Y
         lna_init, rho_extra_init = args
