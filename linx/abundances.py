@@ -23,7 +23,7 @@ class AbundanceModel(eqx.Module):
     nuclear_net : NuclearRates
         Nuclear network to be used for BBN prediction. 
     weak_rates : WeakRates
-        Weak rates for n <-> p. 
+        Weak rates for neutron-proton interconversion. 
     species_dict : dict
         Dictionary of species considered in LINX. 
     species_Z : list
@@ -123,31 +123,28 @@ class AbundanceModel(eqx.Module):
             Time in seconds. If `None`, will be computed in function. 
         eta_fac : float, optional
             Rescaling factor for baryon-to-photon ratio, 1 for fiducial value 
-            in const.eta0 (or const.Omegabh2). 
+            in `const.eta0` (or `const.Omegabh2`). 
         tau_n_fac : float, optional
             Rescaling factor for neutron decay lifetime, 1 for fiducial value 
-            in const.eta0 (or const.Omegabh2). 
+            in `const.eta0` (or `const.Omegabh2`). 
         nuclear_rates_q : array, optional
-            p ~ N(0,1) specifies the nuclear rate in its log-normal 
-            distribution. If not specified, will be taken to be p = 0. 
+            q ~ N(0,1) specifies the nuclear rate in its log-normal 
+            distribution. If not specified, will be taken to be `q = 0`. 
         Y_i : tuple of float, optional
-            Initial abundances n_i/n_b for species. Length must be equal to 
-            self.nuclear_net.max_i_species. Must specify T_start and T_end if 
-            not `None`. 
+            Initial abundances :math:`n_i/n_b` for species. Length must be equal to 
+            `self.nuclear_net.max_i_species`. Must specify `T_start` and `T_end` if not `None`. 
         T_start : float
-            Temperature in MeV to start integration. Must specify Y_i and T_end if
-            not `None`, otherwise const.T_start used. 
+            Temperature in MeV to start integration. Must specify `Y_i` and `T_end` if not `None`, otherwise `const.T_start` used. 
         T_end : float
             Temperature in MeV to end integration. 
         sampling_nTOp : int
-            Number of points to subdivide (T_end, T_start) for n<->p rate 
-            interpolation table. 
+            Number of points to subdivide (`T_end`, `T_start`) for neutron-proton interconversion rate interpolation table. 
         rtol : float, optional
-            Relative tolerance of the abundance solver. Default is 1e-4. 
+            Relative tolerance of the abundance solver. Default is `1e-4`. 
         atol : float, optional
-            Absolute tolerance of the abundance solver. Default is 1e-9. 
+            Absolute tolerance of the abundance solver. Default is `1e-9`. 
         max_steps : int, optional
-            Maximum number of steps taken by the solver. Default is 4096. 
+            Maximum number of steps taken by the solver. Default is `4096`. 
             Increasing this slows down the code, while decreasing this could 
             mean that the solver cannot complete the solution. 
         solver : Diffrax ODE solver 
@@ -160,10 +157,7 @@ class AbundanceModel(eqx.Module):
         Returns
         -------
         tuple of array or array
-            If `save_history`, a tuple containing an array of EM temperatures, 
-            an array of times, and a Diffrax `Solution` instance, which can be 
-            called as a function of time. Otherwise, returns yields of all 
-            species considered in `self.nuclear_net`.  
+            If `save_history` is set to `True`, a tuple containing an array of EM temperatures, an array of times, and a Diffrax `Solution` instance, which can be called as a function of time. Otherwise, returns yields of all species considered in `self.nuclear_net`.  
 
         """
 
@@ -292,8 +286,7 @@ class AbundanceModel(eqx.Module):
         rho_g_vec : array
             Energy density of photons. 
         rho_nu_vec : array
-            Energy density of one species of neutrinos (assumed identical for 
-            all species). 
+            Energy density of one species of neutrinos (assumed identical for all species). 
         rho_NP_vec : array
             Energy density of all new physics fluids. 
         P_NP_vec : array
@@ -369,10 +362,7 @@ class AbundanceModel(eqx.Module):
             
         Notes
         -----
-        The final entry a[-1] is given by TCMB0 / T_gamma[-1], where TCMB0 is 
-        the CMB temperature measured today, and T_gamma[-1] is the temperature 
-        of photons in the last entry of rho_g_vec. In other words, we assume no 
-        subsequent entropy dump in the electromagnetic sector.
+        The final entry `a[-1]` is given by `const.T0CMB / T_gamma[-1]`, where `const.T0CMB` is the CMB temperature measured today, and `T_gamma[-1]` is the temperature of photons in the last entry of `rho_g_vec`. In other words, we assume no subsequent entropy dump in the electromagnetic sector.
         
         """
 
@@ -429,7 +419,7 @@ class AbundanceModel(eqx.Module):
         Y : array
             Array of abundances for evaluating :math:`dY_i/dt`. 
         args : tuple of arrays
-            Other relevant information for evaluating the derivative. These are respectively, 0) an array of scale factors; 1) an array of times; 2) an array of EM sector temperatures; 3) an array representing the abscissa of EM sector temperatures for evaluating weak rates; 4) an array of n -> p rates to interpolate over; 5) an array of p -> n rates to interpolate over; 6) the rescaling factor for baryon-to-photon ratio ``eta_fac``; 7) the rescaling factor for neutron decay lifetime ``tau_n_fac`` and 8) the array rescaling nuclear rates, ``nuclear_rates_q``. 
+            Other relevant information for evaluating the derivative. These are respectively, 0) an array of scale factors; 1) an array of times; 2) an array of EM sector temperatures; 3) an array representing the abscissa of EM sector temperatures for evaluating weak rates; 4) an array of n -> p rates to interpolate over; 5) an array of p -> n rates to interpolate over; 6) the rescaling factor for baryon-to-photon ratio `eta_fac`; 7) the rescaling factor for neutron decay lifetime `tau_n_fac` and 8) the array rescaling nuclear rates, `nuclear_rates_q`. 
 
         Returns
         -------
@@ -481,9 +471,9 @@ class AbundanceModel(eqx.Module):
         Parameters
         ----------
         Yn : float
-            The yield n_n / n_b of free neutrons. 
+            The yield :math:`n_n / n_b` of free neutrons. 
         Yp : float
-            The yield n_p / n_b of free protons. 
+            The yield :math:`n_p / n_b` of free protons. 
         T : float
             The temperature of the baryons in MeV.
         eta : float
