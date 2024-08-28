@@ -77,11 +77,14 @@ If you use LINX, we suggest you cite both LINX and the other public codes that p
 The suggested language for citation is "LINX [linx], which uses methods and tables from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
 
 ```
-@article{linx,
-    title = {{LINX}: A Fast, Differentiable, and Extensible Big Bang Nucleosynthesis Package},
-    author = {Giovanetti, Cara and Lisanti, Mariangela and Liu, Hongwan and Mishra-Sharma, Siddharth and Ruderman, Joshua T.},
-    year={2024},    
-    note={To appear},
+@misc{linx,
+      title={{LINX}: A Fast, Differentiable, and Extensible Big Bang Nucleosynthesis Package}, 
+      author={Cara Giovanetti and Mariangela Lisanti and Hongwan Liu and Siddharth Mishra-Sharma and Joshua T. Ruderman},
+      year={2024},
+      eprint={2408.14538},
+      archivePrefix={arXiv},
+      primaryClass={astro-ph.CO},
+      url={https://arxiv.org/abs/2408.14538}, 
 }
 
 @article{nudecBSM1,
@@ -137,4 +140,6 @@ The suggested language for citation is "LINX [linx], which uses methods and tabl
 ```
 
 ## References
-Two reference papers detailing LINX and the analyses we have performed with it will appear on the arXiv soon!
+A detailed reference outlining the structure and philosophy of LINX and including examples of how to use it with gradient-assisted methods is available at [https://arxiv.org/abs/2408.14538](https://arxiv.org/abs/2408.14538).
+
+An example of an analysis that can be performed with LINX, where LINX is used with CLASS to perform an analysis with a joint CMB and BBN likelihood, is available at [https://arxiv.org/abs/2408.14531](https://arxiv.org/abs/2408.14531).
