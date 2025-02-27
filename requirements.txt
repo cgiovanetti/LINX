@@ -5,12 +5,12 @@ cloudpickle
 corner
 cosmopower-jax
 Cython
-diffrax==0.4.1
+diffrax>=0.6.2
 dynesty
 emcee
 equinox
-jax==0.4.28
-jaxlib==0.4.28
+jax>=0.4.38
+jaxlib>=0.4.38
 jaxopt
 jaxtyping
 joblib

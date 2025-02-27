@@ -4,7 +4,7 @@ from jax import vmap
 
 import equinox as eqx
 
-from diffrax import diffeqsolve, ODETerm, Tsit5, PIDController, SaveAt, DiscreteTerminatingEvent 
+from diffrax import diffeqsolve, ODETerm, Tsit5, PIDController, SaveAt, Event
 
 import linx.thermo as thermo
 import linx.const as const 
@@ -109,14 +109,13 @@ class BackgroundModel(eqx.Module):
 
         Y0 = (lna_init, T_EM_init, T_nu_init)
         
-        def T_EM_check(state, **kwargs): 
-
-            return state.y[1] < T_end
+        def T_EM_check(t, y, args, **kwargs): 
+            return y[1] < T_end
             
         sol = diffeqsolve(
             ODETerm(self.dY), solver, args=(lna_init, rho_extra_init),
             t0=0., t1=jnp.inf, dt0=None, y0=Y0, 
-            saveat=SaveAt(steps=True), discrete_terminating_event = DiscreteTerminatingEvent(T_EM_check),
+            saveat=SaveAt(steps=True), event=Event(T_EM_check),
             stepsize_controller = PIDController(
                 rtol=rtol, atol=atol
             ), 
