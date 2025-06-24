@@ -86,6 +86,11 @@ def lnlike(theta, n_dim):
     )
 
     YHe = 4 * Ya
+
+    mH = 1.0078250322 # amu
+    mHe = 4.0026032545 # amu
+    Yp_CMB = 1./(4*mH/mHe*(1/YHe - 1) + 1) # actual mass density for CLASS
+
     YHe_BBN = 0.2449 # Aver 2015
     YHe_BBN_sigma = 0.004
 
@@ -98,7 +103,7 @@ def lnlike(theta, n_dim):
     # Now, do the CMB side of things
     # call class with the parameters specified in theta
     params = {
-        'YHe': YHe, # set YHe to input from LINX
+        'YHe': Yp_CMB, # set YHe to input from LINX, matching CLASS notation
         'output': 'tCl pCl lCl',
         'l_max_scalars': max(plik.get_lmax()), # make sure you get lmax from the hi_l likelihood
         'lensing': 'yes',
