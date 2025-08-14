@@ -4,7 +4,7 @@ import numpy as np
 
 import jax.numpy as jnp 
 import jax.lax as lax
-from jax import grad, vmap
+from jax import grad, vmap, device_put
 
 import linx.const as const 
 from linx.special_funcs import Li, K1, K2
@@ -648,27 +648,27 @@ f_numu_ann_tab = np.loadtxt(file_dir+"/data/background/"+"numu_ann.txt")
 
 try:
     gpus = jax.devices('gpu')
-    P_QED_tab = jax.device_put(
+    P_QED_tab = device_put(
         P_QED_tab, device=gpus[0] 
     )
-    dPdT_QED_tab = jax.device_put(
+    dPdT_QED_tab = device_put(
         dPdT_QED_tab, device=gpus[0]
     )
-    d2PdT2_QED_tab  = jax.device_put(
+    d2PdT2_QED_tab  = device_put(
         d2PdT2_QED_tab , device=gpus[0]
     )
 
-    f_nue_scat_tab = jax.device_put(
+    f_nue_scat_tab = device_put(
         f_nue_scat_tab, device=gpus[0]
     )
-    f_numu_scat_tab = jax.device_put(
+    f_numu_scat_tab = device_put(
         f_numu_scat_tab, device=gpus[0]
     )
 
-    f_nue_ann_tab = jax.device_put(
+    f_nue_ann_tab = device_put(
         f_nue_ann_tab, device=gpus[0]
     )
-    f_numu_ann_tab = jax.device_put(
+    f_numu_ann_tab = device_put(
         f_numu_ann_tab, device=gpus[0]
     )
 except: 
