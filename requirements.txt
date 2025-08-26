@@ -20,7 +20,7 @@ numpyro
 optax
 palettable
 pathspec
-pathtools
+pathtools3
 pickleshare
 pytest
 scipy
