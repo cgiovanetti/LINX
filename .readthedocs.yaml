@@ -12,4 +12,4 @@ sphinx:
 # Optionally set the Python version and install requirements
 python:
   install:
-    - requirements: requirements.txt
+    - requirements: docs/requirements.txt
