@@ -53,8 +53,27 @@ class AbundanceModel(eqx.Module):
     species_mass : list
 
     def __init__(self, nuclear_net, weak_rates=wr.WeakRates()):
+        """
+        Initialize the AbundanceModel with nuclear and weak rate networks.
 
-        self.nuclear_net = nuclear_net  
+        Parameters
+        ----------
+        nuclear_net : NuclearRates
+            Nuclear reaction network to be used for BBN calculations. This
+            defines which nuclear reactions are included in the evolution.
+        weak_rates : WeakRates, optional
+            Weak interaction rates for neutron-proton interconversion.
+            Defaults to standard WeakRates instance.
+
+        Notes
+        -----
+        This constructor initializes the species dictionary, atomic properties
+        (Z, N, A), masses, spins, binding energies, and excess masses for all
+        nuclear species considered in the LINX package (n, p, d, t, He3, He4,
+        Li6, Li7, Li8, Be7, He6, B8).
+        """
+
+        self.nuclear_net = nuclear_net
         self.weak_rates = weak_rates
 
         self.species_dict = {

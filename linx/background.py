@@ -39,11 +39,28 @@ class BackgroundModel(eqx.Module):
     LO : bool
     NLO : bool
 
-    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True): 
+    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True):
+        """
+        Initialize the BackgroundModel with thermodynamic options.
+
+        Parameters
+        ----------
+        decoupled : bool, optional
+            If True, neutrinos are always decoupled. Default is False.
+        use_FD : bool, optional
+            If True, use Fermi-Dirac statistics for neutrinos. Default is True.
+        collision_me : bool, optional
+            If True, include finite electron mass corrections in collision terms.
+            Default is True.
+        LO : bool, optional
+            If True, include leading order QED corrections. Default is True.
+        NLO : bool, optional
+            If True, include next-to-leading order QED corrections. Default is True.
+        """
 
         self.decoupled = decoupled
         self.use_FD = use_FD
-        self.collision_me = collision_me 
+        self.collision_me = collision_me
         self.LO = LO
         self.NLO = NLO
 

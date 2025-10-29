@@ -17,23 +17,65 @@ bernoulli_ary = bernoulli(L)
 
 def comb(N,k):
     """
-    Combinatoric factor N! / (k! (N-k)!). 
+    Combinatoric factor N! / (k! (N-k)!).
+
+    Parameters
+    ----------
+    N : int or array
+        Total number of items.
+    k : int or array
+        Number of items to choose.
+
+    Returns
+    -------
+    float or array
+        Binomial coefficient.
     """
     return jnp.exp((gammaln(N+1) - gammaln(k+1) - gammaln(N-k+1) ))
 
-def Bernoulli(n, x): 
+def Bernoulli(n, x):
     """
-    The Bernoulli polynomial B_n(x), n < 60. See Wikipedia article. 
+    The Bernoulli polynomial B_n(x), n < 60.
+
+    Parameters
+    ----------
+    n : int
+        Order of the Bernoulli polynomial (must be < 60).
+    x : float or array
+        Argument of the polynomial.
+
+    Returns
+    -------
+    float or array
+        Value of B_n(x).
+
+    Notes
+    -----
+    See Wikipedia article on Bernoulli polynomials for definition.
     """
 
     return lax.fori_loop(
         0, n+1, lambda i, val: val+bernoulli_ary[i] * comb(n,i) * x**(n-i), 0
     )
 
-def gamma(x): 
+def gamma(x):
     """
-    Gamma function using the Lanczos approximation. Needed for imaginary
-    arguments. 
+    Gamma function using the Lanczos approximation.
+
+    Parameters
+    ----------
+    x : float or complex
+        Argument of the gamma function.
+
+    Returns
+    -------
+    float or complex
+        Value of Γ(x).
+
+    Notes
+    -----
+    Uses Lanczos approximation with reflection formula for x < 0.5.
+    Supports complex arguments.
     """
     def lanczos(x): 
 
@@ -75,23 +117,56 @@ def gamma(x):
     return lax.cond(x < 0.5, reflect, lanczos, x)
 
 
-def Riemann_zeta(n): 
+def Riemann_zeta(n):
     """
-    Riemann zeta function. Works for n > -60. Fixes results
-    for negative arguments. 
+    Riemann zeta function with extended domain.
+
+    Parameters
+    ----------
+    n : int or array
+        Argument of the zeta function (must be > -60).
+
+    Returns
+    -------
+    float or array
+        Value of ζ(n).
+
+    Notes
+    -----
+    Uses Bernoulli numbers for negative arguments. Returns 0 for
+    negative even integers.
     """
 
     return jnp.where(
         n > 0, zeta(n, 1), jnp.where(
-            (n < 0) & (-n % 2 == 0), 0., 
+            (n < 0) & (-n % 2 == 0), 0.,
             (-1.)**(-n) * bernoulli_ary[-n+1] / (-n + 1)
         )
     )
 
 @partial(jax.jit, static_argnums=(0,))
-def Li(n, z): 
+def Li(n, z):
     """
-    Polylogarithm of order n and argument z. 
+    Polylogarithm of order n and argument z.
+
+    Parameters
+    ----------
+    n : int
+        Order of the polylogarithm (static argument).
+    z : float or complex
+        Argument of the polylogarithm.
+
+    Returns
+    -------
+    float
+        Value of Li_n(z).
+
+    Notes
+    -----
+    Uses different series expansions depending on |z|:
+    - |z| ≤ 0.5: direct series
+    - 0.5 < |z| < 2: intermediate series with harmonic terms
+    - |z| ≥ 2: reciprocal series with Bernoulli polynomials
     """
     def _Li_z_small(z): 
     
@@ -154,10 +229,24 @@ def Li(n, z):
         ) 
     )
 
-def K0(z): 
+def K0(z):
     """
-    Modified Bessel function of the second kind of order 0. 
-    See Zhang and Jin for algorithm. 
+    Modified Bessel function of the second kind of order 0.
+
+    Parameters
+    ----------
+    z : float or array
+        Argument of the Bessel function.
+
+    Returns
+    -------
+    float or array
+        Value of K_0(z).
+
+    Notes
+    -----
+    Uses different series approximations for z < 9 and z ≥ 9.
+    Algorithm from Zhang and Jin.
     """
 
     def K0_small(z):
@@ -185,21 +274,45 @@ def K0(z):
 
     return lax.cond(z < 9, K0_small, K0_large, z)
 
-def K1(z): 
+def K1(z):
     """
-    Modified Bessel function of the second kind of order 1. 
+    Modified Bessel function of the second kind of order 1.
+
+    Parameters
+    ----------
+    z : float or array
+        Argument of the Bessel function.
+
+    Returns
+    -------
+    float or array
+        Value of K_1(z).
     """
 
-    def K1_small(z): 
+    def K1_small(z):
 
         return (1 / z - i1(z) * K0(z)) / i0(z)
 
     return jnp.where(z < 600., K1_small(jnp.where(z < 600. , z, 600.)), 0.)
 
 
-def K2(z): 
+def K2(z):
     """
-    Modified Bessel function of the second kind of order 2. 
+    Modified Bessel function of the second kind of order 2.
+
+    Parameters
+    ----------
+    z : float or array
+        Argument of the Bessel function.
+
+    Returns
+    -------
+    float or array
+        Value of K_2(z).
+
+    Notes
+    -----
+    Computed using recurrence relation: K_2(z) = K_0(z) + 2/z K_1(z).
     """
 
-    return K0(z) + 2 / z * K1(z) 
+    return K0(z) + 2 / z * K1(z)

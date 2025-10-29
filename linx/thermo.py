@@ -870,60 +870,60 @@ def n_nue_std(T_nue, mu_nue=0.):
 
     return n_massless_FD(T_nue, mu_nue, 2) 
 
-def rho_numt_std(T_numt, mu_numt=0.): 
+def rho_numt_std(T_numt, mu_numt=0.):
     """
     Total energy density of mu, tau neutrinos.
 
     Parameters
     ----------
-    T_nue : float
+    T_numt : float
         Mu, tau neutrino temperature in MeV.
-    mu_nue : float, optional
+    mu_numt : float, optional
         Chemical potential of mu,tau neutrinos in MeV. Defaults to 0.
         
     Returns
     -------
     float
-        Units of MeV^4. 
-    """ 
+        Units of MeV^4.
+    """
 
     return 2 * rho_massless_FD(T_numt, mu_numt, 2)
 
-def p_numt_std(T_numt, mu_numt=0.): 
+def p_numt_std(T_numt, mu_numt=0.):
     """
     Total pressure of mu, tau neutrinos.
 
     Parameters
     ----------
-    T_nue : float
+    T_numt : float
         Mu, tau neutrino temperature in MeV.
-    mu_nue : float, optional
+    mu_numt : float, optional
         Chemical potential of mu,tau neutrinos in MeV.  Defaults to 0.
         
     Returns
     -------
     float
-        Units of MeV^4. 
-    """ 
+        Units of MeV^4.
+    """
 
     return 2 * rho_massless_FD(T_numt, mu_numt, 2) / 3
 
-def n_numt_std(T_numt, mu_numt=0.): 
+def n_numt_std(T_numt, mu_numt=0.):
     """
     Total number density of mu, tau neutrinos.
 
     Parameters
     ----------
-    T_nue : float
+    T_numt : float
         Mu, tau neutrino temperature in MeV.
-    mu_nue : float, optional
+    mu_numt : float, optional
         Chemical potential of mu,tau neutrinos in MeV.  Defaults to 0.
         
     Returns
     -------
     float
-        Units of MeV^4. 
-    """ 
+        Units of MeV^3.
+    """
 
     return 2 * n_massless_FD(T_numt, mu_numt, 2)
 

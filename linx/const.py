@@ -59,8 +59,8 @@ Y_p_0 = 24.7/100.
 mbaryon = (1. - Y_p_0)*mH + Y_p_0*mHe4/4.
 
 # Neutron decay lifetime and uncertainty, in seconds.
-tau_n = 879.4
-sigma_tau_n = 0.6
+tau_n = 879.4  # Neutron lifetime in seconds
+sigma_tau_n = 0.6  # 1-sigma uncertainty in neutron lifetime
 
 # Fine-structure constant.
 aFS = 1./137.035999084 # fine structure constant 
@@ -101,12 +101,12 @@ HubbleOverh = 100 * km_to_Mpc * hbar
 # Critical density today / h in MeV^4
 rhocOverh2 = 3. / (8. * jnp.pi * GN) * HubbleOverh**2
 
-# baryon abundance measured from Planck 2018 TTTEEE+lowE+lensing+BAO
-Omegabh2 = 0.02242
-sigma_Omegabh2 = 0.00014
-Omegabh2_to_eta0 = rhocOverh2 / n0CMB / mbaryon 
-eta0 = Omegabh2_to_eta0 * Omegabh2
-sigma_eta0 = Omegabh2_to_eta0 * sigma_Omegabh2
+# Baryon abundance from Planck 2018 TTTEEE+lowE+lensing+BAO
+Omegabh2 = 0.02242  # Baryon density parameter
+sigma_Omegabh2 = 0.00014  # 1-sigma uncertainty in Omegabh2
+Omegabh2_to_eta0 = rhocOverh2 / n0CMB / mbaryon  # Conversion factor
+eta0 = Omegabh2_to_eta0 * Omegabh2  # Baryon-to-photon ratio
+sigma_eta0 = Omegabh2_to_eta0 * sigma_Omegabh2  # 1-sigma uncertainty in eta0
 
 
 #######################################
