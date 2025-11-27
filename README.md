@@ -77,14 +77,19 @@ If you use LINX, we suggest you cite both LINX and the other public codes that p
 The suggested language for citation is "LINX [linx], which uses methods and tables from Refs. [nudecBSM1,nudecBSM2,PRIMAT,PRyM]".  All of these citations are included below.
 
 ```
-@misc{linx,
-      title={{LINX}: A Fast, Differentiable, and Extensible Big Bang Nucleosynthesis Package}, 
-      author={Cara Giovanetti and Mariangela Lisanti and Hongwan Liu and Siddharth Mishra-Sharma and Joshua T. Ruderman},
-      year={2024},
-      eprint={2408.14538},
-      archivePrefix={arXiv},
-      primaryClass={astro-ph.CO},
-      url={https://arxiv.org/abs/2408.14538}, 
+@article{linx,
+  title={{LINX}: A Fast, Differentiable, and Extensible Big Bang Nucleosynthesis Package}, 
+  author = {Giovanetti, Cara and Lisanti, Mariangela and Liu, Hongwan and Mishra-Sharma, Siddharth and Ruderman, Joshua T.},
+  journal = {Phys. Rev. D},
+  volume = {112},
+  issue = {6},
+  pages = {063531},
+  numpages = {33},
+  year = {2025},
+  month = {Sep},
+  publisher = {American Physical Society},
+  doi = {10.1103/f3tj-r882},
+  url = {https://link.aps.org/doi/10.1103/f3tj-r882}
 }
 
 @article{nudecBSM1,
