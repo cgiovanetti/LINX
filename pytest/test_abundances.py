@@ -27,8 +27,9 @@ abundance_model_PRIMAT_2018 = AbundanceModel(
 
 @pytest.fixture
 def sample_inputs():
-    t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec = thermo_model_DNeff(0.)
-    
+    # Use [:7] slice for backward compatibility with ThermoResult (which has 9 fields)
+    t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec = thermo_model_DNeff(0.)[:7]
+
     return t_vec_ref, a_vec_ref, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, Neff_vec 
 
 @pytest.fixture

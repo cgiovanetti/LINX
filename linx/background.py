@@ -7,6 +7,7 @@ import equinox as eqx
 from diffrax import diffeqsolve, ODETerm, Tsit5, PIDController, SaveAt, Event
 
 import linx.thermo as thermo
+from linx.thermo import ThermoResult
 import linx.const as const 
 
 rho_massless_BE_v = vmap(
@@ -185,9 +186,16 @@ class BackgroundModel(eqx.Module):
 
         Neff_vec = thermo.N_eff(rho_tot_vec, rho_g_vec)
 
-        return (
-            t_vec, a_vec, rho_g_vec, rho_nu_vec, 
-            rho_extra_vec, P_extra_vec, Neff_vec
+        return ThermoResult(
+            t_vec=t_vec,
+            a_vec=a_vec,
+            rho_g_vec=rho_g_vec,
+            rho_nu_vec=rho_nu_vec,
+            rho_extra_vec=rho_extra_vec,
+            P_extra_vec=P_extra_vec,
+            Neff_vec=Neff_vec,
+            T_start=T_start,
+            T_end=T_end
         )
     
     @eqx.filter_jit
