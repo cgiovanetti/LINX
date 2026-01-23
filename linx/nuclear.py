@@ -1,7 +1,8 @@
 import jax.numpy as jnp
 import equinox as eqx
+import interpax
 
-import linx.const as const 
+import linx.const as const
 from linx.reactions import Reaction
 
 class NuclearRates(eqx.Module): 
@@ -179,15 +180,25 @@ class NuclearRates(eqx.Module):
             nuclear_rates_q = jnp.array([0. for _ in self.reactions])
 
         dYdt_vec = jnp.zeros(len(Y))
-        
-        _nTOp_frwrd = jnp.interp(
-            T_t, jnp.flip(T_interval), jnp.flip(nTOp_frwrd_vec),
-            left=nTOp_frwrd_vec[-1],right=nTOp_frwrd_vec[0]
+
+        # Sort by T_interval to handle non-monotonic temperature evolution
+        # (e.g., in reheating scenarios). Note: T_interval is typically
+        # monotonically decreasing from logspace, but we sort to be safe.
+        sort_idx = jnp.argsort(T_interval)
+        T_sorted = T_interval[sort_idx]
+        nTOp_frwrd_sorted = nTOp_frwrd_vec[sort_idx]
+        nTOp_bkwrd_sorted = nTOp_bkwrd_vec[sort_idx]
+
+        _nTOp_frwrd = interpax.interp1d(
+            T_t, T_sorted, nTOp_frwrd_sorted,
+            method='linear',
+            extrap=True
         ) / (const.tau_n * tau_n_fac)
 
-        _nTOp_bkwrd = jnp.interp(
-            T_t, jnp.flip(T_interval), jnp.flip(nTOp_bkwrd_vec),
-            left=nTOp_bkwrd_vec[-1],right=nTOp_bkwrd_vec[0]
+        _nTOp_bkwrd = interpax.interp1d(
+            T_t, T_sorted, nTOp_bkwrd_sorted,
+            method='linear',
+            extrap=True
         ) / (const.tau_n * tau_n_fac)
 
         # These functions take temperature in K. 

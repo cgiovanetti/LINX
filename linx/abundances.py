@@ -5,6 +5,7 @@ sys.path.append('..')
 import jax.numpy as jnp
 import equinox as eqx
 from diffrax import diffeqsolve, ODETerm, Tsit5, Kvaerno3, PIDController, SaveAt
+import interpax
 
 import linx.nuclear as nucl
 import linx.const as const 
@@ -211,32 +212,44 @@ class AbundanceModel(eqx.Module):
 
         # These are in MeV
         T_g_vec  = thermo.T_g(rho_g_vec)
-        T_nu_vec = thermo.T_nu(rho_nu_vec) 
+        T_nu_vec = thermo.T_nu(rho_nu_vec)
 
-        a_start  = jnp.exp(
-            jnp.interp(
-                jnp.log(T_start), 
-                jnp.flip(jnp.log(T_g_vec)), 
-                jnp.flip(jnp.log(a_vec)), 
-                left=jnp.log(a_vec[-1]), right=jnp.log(a_vec[0])
+        # Sort by log(T_g) to handle non-monotonic temperature evolution
+        # (e.g., in reheating scenarios). interpax.interp1d requires
+        # monotonically increasing x coordinates.
+        log_T_g_vec = jnp.log(T_g_vec)
+        sort_idx = jnp.argsort(log_T_g_vec)
+        log_T_g_sorted = log_T_g_vec[sort_idx]
+        log_a_sorted = jnp.log(a_vec)[sort_idx]
+        log_t_sorted = jnp.log(t_vec)[sort_idx]
+
+        a_start = jnp.exp(
+            interpax.interp1d(
+                jnp.log(T_start),
+                log_T_g_sorted,
+                log_a_sorted,
+                method='linear',
+                extrap=True
             )
         )
 
         t_start = jnp.exp(
-            jnp.interp(
-                jnp.log(T_start), 
-                jnp.flip(jnp.log(T_g_vec)), 
-                jnp.flip(jnp.log(t_vec)),
-                left=jnp.log(t_vec[-1]), right=jnp.log(t_vec[0])
+            interpax.interp1d(
+                jnp.log(T_start),
+                log_T_g_sorted,
+                log_t_sorted,
+                method='linear',
+                extrap=True
             )
         )
 
         t_end = jnp.exp(
-            jnp.interp(
-                jnp.log(T_end), 
-                jnp.flip(jnp.log(T_g_vec)), 
-                jnp.flip(jnp.log(t_vec)),
-                left=jnp.log(t_vec[-1]), right=jnp.log(t_vec[0])
+            interpax.interp1d(
+                jnp.log(T_end),
+                log_T_g_sorted,
+                log_t_sorted,
+                method='linear',
+                extrap=True
             )
         )
 
@@ -327,13 +340,22 @@ class AbundanceModel(eqx.Module):
 
         P_tot_vec = p_EM_std_v(T_g_vec) + 3 * (rho_nu_vec/3) + P_NP_vec
 
-        def P_tot(rho_tot): 
+        # Sort by log(rho_tot) to handle non-monotonic energy density evolution
+        # (e.g., in reheating scenarios)
+        log_rho_tot_vec = jnp.log(rho_tot_vec)
+        sort_idx_rho = jnp.argsort(log_rho_tot_vec)
+        log_rho_sorted = log_rho_tot_vec[sort_idx_rho]
+        log_P_sorted = jnp.log(P_tot_vec)[sort_idx_rho]
+
+        def P_tot(rho_tot):
 
             return jnp.exp(
-                jnp.interp(
-                    jnp.log(rho_tot), 
-                    jnp.flip(jnp.log(rho_tot_vec)), 
-                    jnp.flip(jnp.log(P_tot_vec))
+                interpax.interp1d(
+                    jnp.log(rho_tot),
+                    log_rho_sorted,
+                    log_P_sorted,
+                    method='linear',
+                    extrap=True
                 )
             )
 
@@ -393,14 +415,24 @@ class AbundanceModel(eqx.Module):
 
         P_tot_vec = p_EM_std_v(T_g_vec) + 3 * (rho_nu_vec/3) + P_NP_vec
 
-        def P_tot(rho_tot): 
+        # Sort by log(rho_tot) to handle non-monotonic energy density evolution
+        # (e.g., in reheating scenarios)
+        log_rho_tot_vec = jnp.log(rho_tot_vec)
+        sort_idx_rho = jnp.argsort(log_rho_tot_vec)
+        log_rho_sorted = log_rho_tot_vec[sort_idx_rho]
+        log_P_sorted = jnp.log(P_tot_vec)[sort_idx_rho]
+
+        def P_tot(rho_tot):
 
             return jnp.exp(
-                jnp.interp(
-                    jnp.log(rho_tot), jnp.flip(jnp.log(rho_tot_vec)), 
-                    jnp.flip(jnp.log(P_tot_vec))
+                interpax.interp1d(
+                    jnp.log(rho_tot),
+                    log_rho_sorted,
+                    log_P_sorted,
+                    method='linear',
+                    extrap=True
                 )
-            )   
+            )
 
         def dlna_prime(rho_tot, t, args): 
 

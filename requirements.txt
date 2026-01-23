@@ -9,6 +9,7 @@ diffrax>=0.6.2
 dynesty
 emcee
 equinox
+interpax
 jax>=0.4.38
 jaxlib>=0.4.38
 jaxopt
