@@ -157,10 +157,10 @@ class Reaction(eqx.Module):
 
             self.frwrd_rate_param_func = frwrd_rate_param_func 
 
-        else: 
+        else:
 
-            return TypeError('Must include spline data points or analytic \
-                             function for rates.')
+            raise TypeError('Must include spline data points or analytic '
+                            'function for rates.')
 
     @eqx.filter_jit
     def frwrd_rate_param(self, T, p):
