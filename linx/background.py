@@ -16,7 +16,7 @@ rho_massless_FD_v = vmap(
     thermo.rho_massless_FD, in_axes=(0, None, None)
 )
 
-class BackgroundModel(eqx.Module): 
+class BackgroundModel(eqx.Module):
     """Background model.
 
     Attributes
@@ -31,6 +31,9 @@ class BackgroundModel(eqx.Module):
         Whether to use leading order QED correction. Default is `True`.
     NLO : bool, optional
         Whether to use next-to-leading order QED correction. Default is True.
+    throw : bool, optional
+        Whether to raise exceptions on solver failure. Default is `True`.
+        Set to `False` for parameter scans where some combinations may fail.
     """
 
     decoupled : bool
@@ -38,8 +41,9 @@ class BackgroundModel(eqx.Module):
     collision_me : bool
     LO : bool
     NLO : bool
+    throw : bool
 
-    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True):
+    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO=True, throw=True):
         """
         Initialize the BackgroundModel with thermodynamic options.
 
@@ -56,6 +60,9 @@ class BackgroundModel(eqx.Module):
             If True, include leading order QED corrections. Default is True.
         NLO : bool, optional
             If True, include next-to-leading order QED corrections. Default is True.
+        throw : bool, optional
+            If True, raise exceptions on solver failure. Default is True.
+            Set to False for parameter scans where some combinations may fail.
         """
 
         self.decoupled = decoupled
@@ -63,6 +70,7 @@ class BackgroundModel(eqx.Module):
         self.collision_me = collision_me
         self.LO = LO
         self.NLO = NLO
+        self.throw = throw
 
     @eqx.filter_jit
     def __call__(
@@ -131,12 +139,13 @@ class BackgroundModel(eqx.Module):
             
         sol = diffeqsolve(
             ODETerm(self.dY), solver, args=(lna_init, rho_extra_init),
-            t0=0., t1=jnp.inf, dt0=None, y0=Y0, 
+            t0=0., t1=jnp.inf, dt0=None, y0=Y0,
             saveat=SaveAt(steps=True), event=Event(T_EM_check),
-            stepsize_controller = PIDController(
+            stepsize_controller=PIDController(
                 rtol=rtol, atol=atol
-            ), 
-            max_steps=max_steps
+            ),
+            max_steps=max_steps,
+            throw=self.throw
         )
 
         a_vec = jnp.exp(sol.ys[0])
