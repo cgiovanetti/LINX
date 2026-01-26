@@ -1,13 +1,62 @@
-import os 
+import os
+from typing import NamedTuple
 
 import numpy as np
 
-import jax.numpy as jnp 
+import jax.numpy as jnp
 import jax.lax as lax
 from jax import grad, vmap, device_put, devices
 
-import linx.const as const 
+import linx.const as const
 from linx.special_funcs import Li, K1, K2
+
+
+class ThermoResult(NamedTuple):
+    """Result from BackgroundModel containing thermodynamic evolution.
+
+    This object encapsulates all outputs from BackgroundModel and can be
+    passed directly to AbundanceModel. It supports tuple unpacking for
+    backward compatibility.
+
+    Attributes
+    ----------
+    t_vec : jnp.ndarray
+        Times in seconds at which thermodynamics are saved.
+    a_vec : jnp.ndarray
+        Scale factor at each point in time.
+    rho_g_vec : jnp.ndarray
+        Energy density of photons in MeV^4 at each point in time.
+    rho_nu_vec : jnp.ndarray
+        Energy density of one species of neutrinos in MeV^4.
+    rho_extra_vec : jnp.ndarray
+        Energy density in MeV^4 of extra species at each point in time.
+    P_extra_vec : jnp.ndarray
+        Pressure in MeV^4 of extra species at each point in time.
+    Neff_vec : jnp.ndarray
+        Effective number of neutrino species at each point in time.
+    T_start : float
+        Starting temperature in MeV used for integration.
+    T_end : float
+        Ending temperature in MeV used for integration.
+
+    Examples
+    --------
+    >>> # New usage pattern
+    >>> thermo_result = BackgroundModel()(0.)
+    >>> abundances = AbundanceModel(nuclear_net)(thermo_result)
+
+    >>> # Backward compatible tuple unpacking
+    >>> t, a, rho_g, rho_nu, rho_extra, P_extra, Neff = thermo_result[:7]
+    """
+    t_vec: jnp.ndarray
+    a_vec: jnp.ndarray
+    rho_g_vec: jnp.ndarray
+    rho_nu_vec: jnp.ndarray
+    rho_extra_vec: jnp.ndarray
+    P_extra_vec: jnp.ndarray
+    Neff_vec: jnp.ndarray
+    T_start: float
+    T_end: float
 
 ###########################################
 #                 Cosmology               #
