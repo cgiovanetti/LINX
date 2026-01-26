@@ -144,7 +144,7 @@ class Reaction(eqx.Module):
                 gpus = jax.devices('gpu')
                 self.T9_vec = jax.device_put(self.T9_vec, device=gpus[0])
                 self.mu_median_vec = jax.device_put(
-                    self.mu_media_vec, device=gpus[0]
+                    self.mu_median_vec, device=gpus[0]
                 )
                 self.expsigma_vec = jax.device_put(
                     self.expsigma_vec, device=gpus[0]
