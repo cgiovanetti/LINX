@@ -102,7 +102,8 @@ class WeakRates(eqx.Module):
                 self.L_nTOpCCRTh_res = jax.device_put(
                     self.L_nTOpCCRTh_res, device=gpus[0]
                 )
-            except: 
+            except (RuntimeError, IndexError):
+                # No GPU available or no GPU devices found - data stays on CPU
                 pass
 
             self.T_pTOn_thermal_interval, self.L_pTOnCCRTh_res = np.loadtxt(
@@ -119,7 +120,8 @@ class WeakRates(eqx.Module):
                 self.L_pTOnCCRTh_res = jax.device_put(
                     self.L_pTOnCCRTh_res, device=gpus[0]
                 )
-            except: 
+            except (RuntimeError, IndexError):
+                # No GPU available or no GPU devices found - data stays on CPU
                 pass
 
         else: 

@@ -671,7 +671,8 @@ try:
     f_numu_ann_tab = device_put(
         f_numu_ann_tab, device=gpus[0]
     )
-except: 
+except (RuntimeError, IndexError):
+    # No GPU available or no GPU devices found - data stays on CPU
     pass
 
 

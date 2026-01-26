@@ -149,7 +149,8 @@ class Reaction(eqx.Module):
                 self.expsigma_vec = jax.device_put(
                     self.expsigma_vec, device=gpus[0]
                 )
-            except: 
+            except (RuntimeError, IndexError):
+                # No GPU available or no GPU devices found - data stays on CPU
                 pass
 
         elif frwrd_rate_param_func is not None: 
