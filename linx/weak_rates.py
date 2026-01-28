@@ -22,7 +22,7 @@ from jax.scipy.special import expit
 file_dir = os.path.dirname(__file__)
 
 # Particle masses
-from linx.const import me, mn, mp
+from linx.const import mn, mp
 Q = mn - mp # Mass difference between neutrons and protons
 
 class WeakRates(eqx.Module): 
@@ -61,8 +61,6 @@ class WeakRates(eqx.Module):
     T_pTOn_thermal_interval : list
     L_nTOpCCRTh_res : list
     L_pTOnCCRTh_res : list 
-
-    lambda_0 : float
 
     def __init__(self, 
         RC_corr=True, FM_corr=True, weak_mag_corr=True, 
@@ -131,24 +129,11 @@ class WeakRates(eqx.Module):
             self.L_nTOpCCRTh_res = [] 
             self.L_pTOnCCRTh_res = [] 
 
-        self.lambda_0 = 0. 
-
-        # Slight shift in limits to avoid unimportant singularities.
-        en_vals = jnp.linspace(1.+.1e-6, Q/me-1e-6, 1000)
-        dlambda_den_vals = self.dlambda_den_RC(en_vals)
-        self.lambda_0 += trapz(dlambda_den_vals, en_vals)
-
-        if self.FM_corr:
-
-            pe_vals = jnp.linspace(
-                0.+1e-4, jnp.sqrt((Q/me)**2 - 1.)-1e-5, 1000
-            )
-            y_vals = self.dlambda_dp_FM(pe_vals)
-            self.lambda_0 += trapz(y_vals, pe_vals)
+        
 
     @eqx.filter_jit
     def __call__(
-        self, T_vec_ref, T_start, T_end, sampling_nTOp
+        self, T_vec_ref, T_start, T_end, sampling_nTOp, me=const.me,
     ): 
         """
         Evaluate n <-> p rates over range of EM temperatures. 
@@ -163,6 +148,8 @@ class WeakRates(eqx.Module):
             Lowest photon temperature to evaluate rates at. In MeV. 
         sampling_nTOp : int
             Number of points between T_start and T_end to evaluate at. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -178,12 +165,12 @@ class WeakRates(eqx.Module):
             jnp.log10(T_start), jnp.log10(T_end), sampling_nTOp
         )
 
-        nTOp_rates = self.nTOp_rates(T_interval, T_vec_ref)
+        nTOp_rates = self.nTOp_rates(T_interval, T_vec_ref, me)
 
         return (T_interval, ) + nTOp_rates
 
-    @eqx.filter_vmap(in_axes=(None, 0, None))
-    def nTOp_rates(self, Tg, T_vec_ref): 
+    @eqx.filter_vmap(in_axes=(None, 0, None, None))
+    def nTOp_rates(self, Tg, T_vec_ref, me=const.me): 
         """
         Dimensionless n <-> p rates, normalized to neutron decay width.
 
@@ -194,6 +181,8 @@ class WeakRates(eqx.Module):
         T_vec_ref : tuple
             (EM temperature array, neutrino temperature array) in MeV, used 
             for computing the weak rates. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -201,6 +190,21 @@ class WeakRates(eqx.Module):
             (n -> p rate, p -> n rate). Note that rates are 
             dimensionless, normalized to the neutron decay width. 
         """
+
+        lambda_0 = 0. 
+
+        # Slight shift in limits to avoid unimportant singularities.
+        en_vals = jnp.linspace(1.+.1e-6, Q/me-1e-6, 1000)
+        dlambda_den_vals = self.dlambda_den_RC(en_vals, me)
+        lambda_0 += trapz(dlambda_den_vals, en_vals)
+
+        if self.FM_corr:
+
+            pe_vals = jnp.linspace(
+                0.+1e-4, jnp.sqrt((Q/me)**2 - 1.)-1e-5, 1000
+            )
+            y_vals = self.dlambda_dp_FM(pe_vals, me)
+            lambda_0 += trapz(y_vals, pe_vals)
 
         Tg_vec_ref, Tnu_vec_ref = T_vec_ref
         Tnu_of_Tg_ref = Tnu_vec_ref / Tg_vec_ref
@@ -229,22 +233,22 @@ class WeakRates(eqx.Module):
         pTOn_rate = 0. 
 
         y_CCR_vals = jnp.array([
-            self.dGamma_nTOp_dp(p_vals, x, xnu), 
-            self.dGamma_pTOn_dp(p_vals, x, xnu)
+            self.dGamma_nTOp_dp(p_vals, x, xnu, me), 
+            self.dGamma_pTOn_dp(p_vals, x, xnu, me)
         ])
         CCR_rates = trapz(y_CCR_vals, p_vals)
-        nTOp_rate += CCR_rates[0] / self.lambda_0 
-        pTOn_rate += CCR_rates[1] / self.lambda_0 
+        nTOp_rate += CCR_rates[0] / lambda_0 
+        pTOn_rate += CCR_rates[1] / lambda_0 
 
         if self.FM_corr:
     
             y_FMCCR_vals = jnp.array([ 
-                self.ddelt_Gamma_nTOp_FM_dp(p_vals, x, xnu),
-                self.ddelt_Gamma_pTOn_FM_dp(p_vals, x, xnu)
+                self.ddelt_Gamma_nTOp_FM_dp(p_vals, x, xnu, me),
+                self.ddelt_Gamma_pTOn_FM_dp(p_vals, x, xnu, me)
             ])
             FMCCR_rates = trapz(y_FMCCR_vals, p_vals)
-            nTOp_rate += FMCCR_rates[0] / self.lambda_0 
-            pTOn_rate += FMCCR_rates[1] / self.lambda_0 
+            nTOp_rate += FMCCR_rates[0] / lambda_0 
+            pTOn_rate += FMCCR_rates[1] / lambda_0 
 
         if self.thermal_corr: 
 
@@ -264,13 +268,13 @@ class WeakRates(eqx.Module):
                     right=self.L_pTOnCCRTh_res[-1]
                 )
             ])
-            nTOp_rate += thermal_rates[0] / self.lambda_0 
-            pTOn_rate += thermal_rates[1] / self.lambda_0 
+            nTOp_rate += thermal_rates[0] / lambda_0 
+            pTOn_rate += thermal_rates[1] / lambda_0 
 
         return (nTOp_rate, pTOn_rate)
 
     
-    def Sirlin_G(self, kmax, en):
+    def Sirlin_G(self, kmax, en, me=const.me):
         """
         Sirlin's universal function. 
 
@@ -281,6 +285,8 @@ class WeakRates(eqx.Module):
             radiative correction, normalized to electron mass. 
         en : float
             Dimensionless electron energy, normalized to electron mass)
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -304,7 +310,7 @@ class WeakRates(eqx.Module):
             + (4./b)*(-spence(1. - 2.*b/(1. + b)))
         )
 
-    def R_RC(self, kmax, en):
+    def R_RC(self, kmax, en, me=const.me):
         """
         Resummed radiative correction term at T = 0. 
 
@@ -315,6 +321,8 @@ class WeakRates(eqx.Module):
             radiative correction, normalized to electron mass. 
         en : float
             Dimensionless electron energy, normalized to electron mass)
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -343,14 +351,14 @@ class WeakRates(eqx.Module):
         return (
             (
                 1. + const.aFS / (2.*jnp.pi) * (
-                    self.Sirlin_G(kmax, en) - 3.*jnp.log(mp / (2*Q))
+                    self.Sirlin_G(kmax, en, me) - 3.*jnp.log(mp / (2*Q))
                 )
             ) * (L + (const.aFS/jnp.pi)*C + delta_factor) * (
                 S + 1./(134.*2.*jnp.pi)*(jnp.log(mp/mA) + A_g) + NLL
             )
         )
 
-    def Fermi(self, b):
+    def Fermi(self, b, me=const.me):
         """
         Fermi function in the relativistic limit. 
 
@@ -358,6 +366,8 @@ class WeakRates(eqx.Module):
         ----------
         b : float
             Speed of the electron. 
+        me: float, optional
+            Electron mass in MeV.  Defaults to const.me
         
         Notes
         -----
@@ -378,7 +388,7 @@ class WeakRates(eqx.Module):
             * jnp.abs(gamma(gamma1 + const.aFS/b*1j))**2
         )
         
-    def bFermi(self, b):
+    def bFermi(self, b, me=const.me):
         """
         Fermi function in the relativistic limit, times speed of electron. 
 
@@ -386,6 +396,8 @@ class WeakRates(eqx.Module):
         ----------
         b : float
             Speed of the electron. 
+        me: float, optional
+            Electron mass in MeV.  Defaults to const.me
 
         Notes
         -----
@@ -394,10 +406,10 @@ class WeakRates(eqx.Module):
 
         """
 
-        return b*self.Fermi(b)
+        return b*self.Fermi(b, me)
     
-    @eqx.filter_vmap(in_axes=(None, 0))
-    def dlambda_den_RC(self, en):
+    @eqx.filter_vmap(in_axes=(None, 0, None))
+    def dlambda_den_RC(self, en, me=const.me):
         """
         Derivative of lambda with respect to energy of electron, 
         including radiative corrections at T = 0. 
@@ -407,6 +419,8 @@ class WeakRates(eqx.Module):
         en : float
             Energy of the electron produced in neutron decay, normalized to 
             the electron mass. 
+        me: float, optional
+            Electron mass in MeV.  Defaults to const.me
 
         Returns
         -------
@@ -423,8 +437,8 @@ class WeakRates(eqx.Module):
 
         if self.RC_corr: 
             R_term = (
-                self.Fermi(b)
-                * self.R_RC(q-en, en)
+                self.Fermi(b, me)
+                * self.R_RC(q-en, en, me)
             )
         else: 
             R_term = 1. 
@@ -433,7 +447,7 @@ class WeakRates(eqx.Module):
             en**2 * (q-en)**2 * b * R_term
         )
     
-    def chi_n_decay(self, pe):
+    def chi_n_decay(self, pe, me=const.me):
         """
         Finite nucleon mass correction term for neutron decay. 
 
@@ -442,6 +456,8 @@ class WeakRates(eqx.Module):
         pe : float
             Dimensionless momentum of the electron, normalized to electron 
             mass. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -485,8 +501,8 @@ class WeakRates(eqx.Module):
             + f3 * (q - en)**2 * (pe**2) / (M*en)
         )
     
-    @eqx.filter_vmap(in_axes=(None, 0))
-    def dlambda_dp_FM(self, pe):
+    @eqx.filter_vmap(in_axes=(None, 0, None))
+    def dlambda_dp_FM(self, pe, me=const.me):
         """
         Derivative of the correction to lambda with respect to momentum, 
         due to finite mass effects. 
@@ -496,6 +512,8 @@ class WeakRates(eqx.Module):
         pe : float
             Dimensionless momentum of the electron, normalized to the electron  
             mass.
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -514,18 +532,18 @@ class WeakRates(eqx.Module):
 
         if self.RC_corr:
 
-            R_rad = self.R_RC(Q/me - en, en) 
+            R_rad = self.R_RC(Q/me - en, en, me) 
 
         else: 
 
             R_rad = 1. 
 
         return (
-            pe**2 * self.chi_n_decay(pe) 
-            * R_rad * self.Fermi(b)
+            pe**2 * self.chi_n_decay(pe, me) 
+            * R_rad * self.Fermi(b, me)
         )
 
-    def chi_Born(self, en, x, x_nu, sgnq):
+    def chi_Born(self, en, x, x_nu, sgnq, me=const.me):
         """
         Integrand in momentum integral for Born weak rate. 
 
@@ -539,6 +557,8 @@ class WeakRates(eqx.Module):
             Dimensionless inverse nu temperature, normalized to electron mass. 
         sqnq : int
             Should have value +1 or -1, to switch between chi_+ and chi_-. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Notes
         -----
@@ -555,7 +575,7 @@ class WeakRates(eqx.Module):
 
         return e_nu**2 * g_nu * g_e 
     
-    def Fermi_sgn(self, sgnq, sgnE, b):
+    def Fermi_sgn(self, sgnq, sgnE, b, me=const.me):
         """
         Fermi function, with a check for proton and electron final state. 
 
@@ -567,6 +587,9 @@ class WeakRates(eqx.Module):
             +1 or -1 to choose between positive or negative arguments of F. 
         b : float
             The speed of the electron. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
+        
 
         Returns
         -------
@@ -577,14 +600,14 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (102). 
         """
         
-        result = jnp.where(sgnq*sgnE > 0, self.Fermi(b), 1.)
+        result = jnp.where(sgnq*sgnE > 0, self.Fermi(b, me), 1.)
         return result
     
     ###############################
     # n<->p Rates                 #
     ###############################
        
-    def dGamma_dp(self, p, x, x_nu, sgnq):
+    def dGamma_dp(self, p, x, x_nu, sgnq, me=const.me):
         """
         Integrand over momentum for n <-> p rate.  including radiative 
         corrections.
@@ -602,6 +625,8 @@ class WeakRates(eqx.Module):
             electron mass. 
         sgnq : int
             +1 or -1, to select between n -> p or p -> n. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -618,12 +643,12 @@ class WeakRates(eqx.Module):
 
         if self.RC_corr: 
             RC_term_plus = (
-                self.R_RC(jnp.abs(sgnq*Q/me - en), en)
-                * self.Fermi_sgn(sgnq, 1, p/en)
+                self.R_RC(jnp.abs(sgnq*Q/me - en), en, me)
+                * self.Fermi_sgn(sgnq, 1, p/en, me)
             )
             RC_term_minus = (
-                self.R_RC(jnp.abs(sgnq*Q/me + en), en)
-                * self.Fermi_sgn(sgnq, -1, p/en)
+                self.R_RC(jnp.abs(sgnq*Q/me + en), en, me)
+                * self.Fermi_sgn(sgnq, -1, p/en, me)
             )
         else: 
             RC_term_plus = 1. 
@@ -631,16 +656,16 @@ class WeakRates(eqx.Module):
 
         return p**2 * (
             (
-                self.chi_Born(en, x, x_nu, sgnq)
+                self.chi_Born(en, x, x_nu, sgnq, me)
                 * RC_term_plus
             ) + (
-                self.chi_Born(-en, x, x_nu, sgnq)
+                self.chi_Born(-en, x, x_nu, sgnq, me)
                 * RC_term_minus
             )
         )
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None))
-    def dGamma_nTOp_dp(self, p, x, xnu):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
+    def dGamma_nTOp_dp(self, p, x, xnu, me=const.me):
         """
         Integrand over momentum for n -> p rate including radiative 
         corrections.
@@ -656,6 +681,8 @@ class WeakRates(eqx.Module):
         x_nu : float
             Dimensionless neutrino inverse temperature, normalized to the
             electron mass. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -666,10 +693,10 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (101). 
         """
 
-        return self.dGamma_dp(p, x, xnu, 1)
+        return self.dGamma_dp(p, x, xnu, 1, me)
     
-    @eqx.filter_vmap(in_axes=(None, 0, None, None))
-    def dGamma_pTOn_dp(self, p, x, xnu):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
+    def dGamma_pTOn_dp(self, p, x, xnu, me=const.me):
         """
         Integrand over momentum for p -> n rate including radiative 
         corrections.
@@ -687,6 +714,8 @@ class WeakRates(eqx.Module):
             electron mass. 
         sgnq : int
             +1 or -1, to select between n -> p or p -> n. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -697,7 +726,7 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (104). 
         """
 
-        return self.dGamma_dp(p, x, xnu, -1)
+        return self.dGamma_dp(p, x, xnu, -1, me)
     
     
     ###########################
@@ -705,7 +734,7 @@ class WeakRates(eqx.Module):
     ###########################
        
        
-    def chi_FM(self, en, x, x_nu, sgnq):
+    def chi_FM(self, en, x, x_nu, sgnq, me=const.me):
         """
         Integrand over momentum for finite mass correction to n <-> p rate.
 
@@ -722,6 +751,8 @@ class WeakRates(eqx.Module):
             electron mass. 
         sgnq : int
             +1 or -1 corresponding to chi_+ or chi_-. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Notes
         -----
@@ -824,7 +855,7 @@ class WeakRates(eqx.Module):
         )
         return result
 
-    def ddelt_Gamma_FM_dp(self, p, x, znu, sgnq):
+    def ddelt_Gamma_FM_dp(self, p, x, znu, sgnq, me=const.me):
         """
         Integrand over momentum for finite mass corrections to the n <-> p
         rate. 
@@ -842,6 +873,8 @@ class WeakRates(eqx.Module):
             electron mass. 
         sgnq : int
             +1 or -1, to select between n -> p or p -> n. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -858,11 +891,11 @@ class WeakRates(eqx.Module):
 
         if self.RC_corr: 
             RC_term_plus = self.R_RC(
-                jnp.abs(sgnq*Q/me - en), en
-            ) * self.Fermi_sgn(sgnq, 1, b) 
+                jnp.abs(sgnq*Q/me - en), en, me
+            ) * self.Fermi_sgn(sgnq, 1, b, me) 
             RC_term_minus = self.R_RC(
-                jnp.abs(sgnq*Q/me + en), en
-            ) * self.Fermi_sgn(sgnq, -1, b)
+                jnp.abs(sgnq*Q/me + en), en, me
+            ) * self.Fermi_sgn(sgnq, -1, b, me)
         
         else: 
             RC_term_plus = 1. 
@@ -870,17 +903,17 @@ class WeakRates(eqx.Module):
 
         result =  p**2 * (
             (
-                self.chi_FM(en, x, znu, sgnq) 
+                self.chi_FM(en, x, znu, sgnq, me) 
                 * RC_term_plus 
             ) + (
-                self.chi_FM(-en, x, znu, sgnq) 
+                self.chi_FM(-en, x, znu, sgnq, me) 
                 * RC_term_minus
             )
         )
         return result
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None))
-    def ddelt_Gamma_nTOp_FM_dp(self, p, x, xnu):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
+    def ddelt_Gamma_nTOp_FM_dp(self, p, x, xnu, me=const.me):
         """
         Integrand over momentum for finite mass corrections to the n -> p
         rate. 
@@ -896,6 +929,8 @@ class WeakRates(eqx.Module):
         x_nu : float
             Dimensionless neutrino inverse temperature, normalized to the
             electron mass. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -906,10 +941,10 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (115). 
         """
 
-        return self.ddelt_Gamma_FM_dp(p, x, xnu, 1)
+        return self.ddelt_Gamma_FM_dp(p, x, xnu, 1, me)
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None))
-    def ddelt_Gamma_pTOn_FM_dp(self, p, x, xnu):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
+    def ddelt_Gamma_pTOn_FM_dp(self, p, x, xnu, me=const.me):
         """
         Integrand over momentum for finite mass corrections to the p -> n 
         rate. 
@@ -925,6 +960,8 @@ class WeakRates(eqx.Module):
         x_nu : float
             Dimensionless neutrino inverse temperature, normalized to the
             electron mass. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to const.me.
 
         Returns
         -------
@@ -935,4 +972,4 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (115). 
         """
 
-        return self.ddelt_Gamma_FM_dp(p, x, xnu, -1)
+        return self.ddelt_Gamma_FM_dp(p, x, xnu, -1, me)

@@ -9,6 +9,7 @@ import interpax
 
 import linx.const as const 
 from linx.special_funcs import Li, K1, K2
+from linx.P_QED import explicit_P2, explicit_P3, dPdTQED_2,dPdTQED_3
 
 ###########################################
 #                 Cosmology               #
@@ -634,18 +635,22 @@ def p_massive_MB(T, mu, m, g):
 
 file_dir = os.path.dirname(__file__)
 
-# QED Corrections - flip to ensure monotonically increasing T for interpax.interp1d
+# QED Corrections - flip to ensure monotonically increasing T for interpax.interp1d (assume me = 0.511 MeV)
 P_QED_tab = np.flip(np.loadtxt(file_dir+"/data/background/"+"QED_P_int.txt"), axis=0)
 dPdT_QED_tab = np.flip(np.loadtxt(file_dir+"/data/background/"+"QED_dP_intdT.txt"), axis=0)
-d2PdT2_QED_tab = np.flip(np.loadtxt(file_dir+"/data/background/"+"QED_d2P_intdT2.txt"), axis=0)
+# d2PdT2_QED_tab = np.flip(np.loadtxt(file_dir+"/data/background/"+"QED_d2P_intdT2.txt"), axis=0) # CG: JAX grad obviates this import...
 
-# Effect of standard value of electron mass in scattering matrix elements
+# Effect of standard value of electron mass in scattering matrix elements (assume me = 0.511 MeV)
 f_nue_scat_tab = np.loadtxt(file_dir+"/data/background/"+"nue_scatt.txt")
 f_numu_scat_tab = np.loadtxt(file_dir+"/data/background/"+"numu_scatt.txt")
 
-# Effect of standard value of electron mass in annihilation matrix elements
+# Effect of standard value of electron mass in annihilation matrix elements (assume me = 0.511 MeV)
 f_nue_ann_tab = np.loadtxt(file_dir+"/data/background/"+"nue_ann.txt")
 f_numu_ann_tab = np.loadtxt(file_dir+"/data/background/"+"numu_ann.txt")
+
+# Use scattering coefficients provided by Miguel Escudero, Greg Jackson, Stefan Sandner and Mikko Laine, to appear
+# no assumption that me = 0.511 MeV
+f_coeffs = np.loadtxt(file_dir+"/data/background/"+"MB_coefficients.txt")
 
 try:
     gpus = devices('gpu')
@@ -655,9 +660,9 @@ try:
     dPdT_QED_tab = device_put(
         dPdT_QED_tab, device=gpus[0]
     )
-    d2PdT2_QED_tab  = device_put(
-        d2PdT2_QED_tab , device=gpus[0]
-    )
+    # d2PdT2_QED_tab  = device_put(
+    #     d2PdT2_QED_tab , device=gpus[0]
+    # )
 
     f_nue_scat_tab = device_put(
         f_nue_scat_tab, device=gpus[0]
@@ -672,6 +677,10 @@ try:
     f_numu_ann_tab = device_put(
         f_numu_ann_tab, device=gpus[0]
     )
+
+    f_coeffs = device_put(
+        f_coeffs, device=gpus[0]
+    )
 except (RuntimeError, IndexError):
     # No GPU available or no GPU devices found - data stays on CPU
     pass
@@ -681,7 +690,7 @@ except (RuntimeError, IndexError):
 # Standard EM Sector #
 ######################
 
-def rho_EM_std(T_g, mu=0, LO=True, NLO=True): 
+def rho_EM_std(T_g, mu=0, me=const.me, LO=True, NLO=True): 
     """
     Total energy density of EM-coupled SM fluids.
 
@@ -692,6 +701,8 @@ def rho_EM_std(T_g, mu=0, LO=True, NLO=True):
     mu : float, optional
         Parameter added for syntax consistency--does not impact function
         behavior.  Defaults to 0.
+    me : float, optional
+        Electron mass in MeV.  Defaults to const.me.
     LO : bool
         True includes leading order QED corrections to the energy density.
         Defaults to 'True'.
@@ -705,25 +716,28 @@ def rho_EM_std(T_g, mu=0, LO=True, NLO=True):
         Units of MeV^4. 
     """ 
 
-    corr_QED = (
-        -interpax.interp1d(
-            T_g, P_QED_tab[:,0],
-            LO*P_QED_tab[:,1]+NLO*P_QED_tab[:,2]
-        )
-        + T_g*interpax.interp1d(
-            T_g, dPdT_QED_tab[:,0],
-            LO*dPdT_QED_tab[:,1]+NLO*dPdT_QED_tab[:,2]
-        )
+    corr_QED = jnp.where(jnp.abs(me/const.me - 1) > 1e-8, # if input me is sufficiently different from const.me,
+        -(LO*explicit_P2(T_g, me) + NLO*explicit_P3(T_g, me)) + T_g*(LO*dPdTQED_2(T_g, me) + NLO*dPdTQED_3(T_g, me)), # compute the QED correction
+        (
+            -interpax.interp1d(
+              T_g, P_QED_tab[:,0],
+              LO*P_QED_tab[:,1]+NLO*P_QED_tab[:,2]
+          )
+          + T_g*interpax.interp1d(
+              T_g, dPdT_QED_tab[:,0],
+              LO*dPdT_QED_tab[:,1]+NLO*dPdT_QED_tab[:,2]
+          )
+        ) # otherwise just use pretabulated values
     )
 
     return (
-        rho_massless_BE(T_g, 0., 2)  + rho_massive_FD(T_g, 0., const.me, 4) 
+        rho_massless_BE(T_g, 0., 2)  + rho_massive_FD(T_g, 0., me, 4) 
         + corr_QED
     )
 
 rho_EM_std_v = vmap(rho_EM_std, in_axes=0)
 
-def p_EM_std(T_g, mu=0, LO=True, NLO=True): 
+def p_EM_std(T_g, mu=0, me=const.me, LO=True, NLO=True): 
     """
     Total pressure of EM-coupled SM fluids.
 
@@ -734,6 +748,8 @@ def p_EM_std(T_g, mu=0, LO=True, NLO=True):
     mu : float, optional
         Parameter added for syntax consistency--does not impact function
         behavior.  Defaults to 0.
+    me : float, optional
+        Electron mass in MeV.  Defaults to const.me.
     LO : bool
         True includes leading order QED corrections to the pressure.
         Defaults to 'True'.
@@ -747,19 +763,23 @@ def p_EM_std(T_g, mu=0, LO=True, NLO=True):
         Units of MeV^4. 
     """ 
 
-    corr_QED = interpax.interp1d(
-        T_g, P_QED_tab[:,0],
-        LO*P_QED_tab[:,1] + NLO*P_QED_tab[:,2]
+    corr_QED = jnp.where(jnp.abs(me/const.me - 1) > 1e-8, # if input me is sufficiently different from const.me,
+        LO*explicit_P2(T_g, me) + NLO*explicit_P3(T_g, me), # compute the QED correction
+        interpax.interp1d(
+          T_g, P_QED_tab[:,0],
+          LO*P_QED_tab[:,1] + NLO*P_QED_tab[:,2]
+        ) # otherwise just use pretabulated values
     )
 
+
     return (
-        p_massless_BE(T_g, 0., 2) + p_massive_FD(T_g, 0., const.me, 4) 
+        p_massless_BE(T_g, 0., 2) + p_massive_FD(T_g, 0., me, 4) 
         + corr_QED
     )
 
 p_EM_std_v = vmap(p_EM_std, in_axes=0)
 
-def rho_plus_p_EM_std(T_g, mu=0, LO=True, NLO=True): 
+def rho_plus_p_EM_std(T_g, mu=0, me=const.me, LO=True, NLO=True): 
     """
     Sum of energy densities and pressures of all EM-coupled SM fluids.
 
@@ -770,6 +790,8 @@ def rho_plus_p_EM_std(T_g, mu=0, LO=True, NLO=True):
     mu : float, optional
         Parameter added for syntax consistency--does not impact function
         behavior.  Defaults to 0.
+    me : float, optional
+        Electron mass in MeV.  Defaults to const.me.
     LO : bool
         True includes leading order QED corrections to the energy density 
         and pressure.  Defaults to 'True'.
@@ -782,15 +804,18 @@ def rho_plus_p_EM_std(T_g, mu=0, LO=True, NLO=True):
     float 
         Units of MeV^4. 
     """ 
-
-    corr_QED = T_g * interpax.interp1d(
-        T_g, dPdT_QED_tab[:,0],
-        LO*dPdT_QED_tab[:,1] + NLO*dPdT_QED_tab[:,2]
+        
+    corr_QED = jnp.where(jnp.abs(me/const.me - 1) > 1e-8, # if input me is sufficiently different from const.me,
+        T_g*(LO*dPdTQED_2(T_g, me) + NLO*dPdTQED_3(T_g, me)), # compute the QED correction
+        T_g * interpax.interp1d(
+          T_g, dPdT_QED_tab[:,0],
+          LO*dPdT_QED_tab[:,1] + NLO*dPdT_QED_tab[:,2]
+        ) # otherwise just use pretabulated values
     )
     
     return (
-        4/3 * rho_massless_BE(T_g, 0., 2) + rho_massive_FD(T_g, 0., 0.511, 4) 
-        + p_massive_FD(T_g, 0., 0.511, 4) + corr_QED
+        4/3 * rho_massless_BE(T_g, 0., 2) + rho_massive_FD(T_g, 0., me, 4) 
+        + p_massive_FD(T_g, 0., me, 4) + corr_QED
     )
 
 def T_g(rho_g):
@@ -957,7 +982,7 @@ dn_numt_dmu_numt_std   = grad(n_numt_std, argnums=1)
 
 
 def collision_terms_std(
-    T_g, T_nue, T_numt, mu_nue=0., mu_numt=0., 
+    T_g, T_nue, T_numt, me=const.me, mu_nue=0., mu_numt=0., 
     decoupled=False, use_FD=True, collision_me=True
 ): 
     """
@@ -972,6 +997,8 @@ def collision_terms_std(
         Electron neutrino temperature in MeV.
     T_numt : array_like
         Mu, tau neutrino temperature in MeV.
+    me : float, optional
+        Electron mass in MeV.  Defaults to const.me
     mu_nue : float, optional
         Chemical potential of electron neutrinos in MeV.
         Defaults to 0.
@@ -1006,6 +1033,11 @@ def collision_terms_std(
         0.
     )
 
+    geL  = const.geL
+    geR  = const.geR
+    gmuL = const.gmuL
+    gmuR = const.gmuR
+
     def G(T_1, mu_1, T_2, mu_2): 
         
         return (
@@ -1018,72 +1050,177 @@ def collision_terms_std(
             )
         )
 
-    def G_nue_with_me(T_1, mu_1, T_2, mu_2):
-
-        def interp_f(f_tab):
-            # Tables have boundary values 0.0 (low T) and 1.0 (high T)
-            return interpax.interp1d(
-                T_1, f_tab[:,0], f_tab[:,1], extrap=(0.0, 1.0)
+    def G_nue_with_me(T_1, mu_1, T_2, mu_2, me):
+    # CG: update to use interp1d
+        def interp_fa1(f_tab): 
+            index = 1
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
             )
 
-        f_nue_ann  = lax.cond(
-            collision_me, interp_f, lambda _: 1., f_nue_ann_tab
+        def interp_fa2(f_tab): 
+            index = 2
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+
+        def interp_fs1(f_tab): 
+            index = 5
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+
+        def interp_fs2(f_tab): 
+            index = 6
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+#         def interp_f(f_tab):
+#             # Tables have boundary values 0.0 (low T) and 1.0 (high T)
+#             return interpax.interp1d(
+#                 T_1, f_tab[:,0], f_tab[:,1], extrap=(0.0, 1.0)
+#             )
+            
+
+        # def interp_f(f_tab): 
+
+        #     return jnp.interp(
+        #         T_1, f_tab[:,0], f_tab[:,1], left=f_tab[0,1], right=f_tab[-1,1]
+        #     )
+
+        # f_nue_ann  = lax.cond(
+        #     collision_me, interp_f, lambda _: 1., f_nue_ann_tab
+        # )
+        # f_nue_scat = lax.cond(
+        #     collision_me, interp_f, lambda _: 1., f_nue_scat_tab
+        # )
+
+        f_ann_1  = lax.cond(
+            collision_me, interp_fa1, lambda _: 1., f_coeffs
         )
-        f_nue_scat = lax.cond(
-            collision_me, interp_f, lambda _: 1., f_nue_scat_tab
+        f_scat_1 = lax.cond(
+            collision_me, interp_fs1, lambda _: 1., f_coeffs
+        )
+
+        f_ann_2  = lax.cond(
+            collision_me, interp_fa2, lambda _: 1., f_coeffs
+        )
+        f_scat_2 = lax.cond(
+            collision_me, interp_fs2, lambda _: 1., f_coeffs
         )
         
-        return (
-            32 * f_a * f_nue_ann * (
+        return ( # note f_a and f_s are now folded into f_nue_ann/scat
+              4 * (geL**2 + geR**2) * (32 * f_ann_1 * (
                 T_1**9 * jnp.exp(2 * mu_1 / T_1) 
                 - T_2**9 * jnp.exp(2 * mu_2 / T_2)
-            ) 
-            + 56 * f_s * f_nue_scat * (
-                jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
-                * T_1**4 * T_2**4 * (T_1 - T_2)
+                    ) 
+                + 56 * f_scat_1 * (
+                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    * T_1**4 * T_2**4 * (T_1 - T_2)
+                )
+            )
+            # new terms (previously baked into tabulated rates)
+            + 4 * geL*geR * (f_ann_2 * 32 * (
+                T_1**9 * jnp.exp(2 * mu_1 / T_1) 
+                - T_2**9 * jnp.exp(2 * mu_2 / T_2)
+                )
+                + 56 * f_scat_2 * (
+                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    * T_1**4 * T_2**4 * (T_1 - T_2)
+                )
             )
         )
+    # CG: update to use interp1d
+    def G_numt_with_me(T_1, mu_1, T_2, mu_2, me): 
 
-    def G_numt_with_me(T_1, mu_1, T_2, mu_2):
-
-        def interp_f(f_tab):
-            # Tables have boundary values 0.0 (low T) and 1.0 (high T)
-            return interpax.interp1d(
-                T_1, f_tab[:,0], f_tab[:,1], extrap=(0.0, 1.0)
+        def interp_fa1(f_tab): 
+            index = 1
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
             )
 
-        f_numt_ann  = lax.cond(
-            collision_me, interp_f, lambda _: 1., f_numu_ann_tab
+        def interp_fa2(f_tab): 
+            index = 2
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+
+        def interp_fs1(f_tab): 
+            index = 5
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+
+        def interp_fs2(f_tab): 
+            index = 6
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index])
+#     def G_numt_with_me(T_1, mu_1, T_2, mu_2):
+
+#         def interp_f(f_tab):
+#             # Tables have boundary values 0.0 (low T) and 1.0 (high T)
+#             return interpax.interp1d(
+#                 T_1, f_tab[:,0], f_tab[:,1], extrap=(0.0, 1.0)
+#             )
+
+        # def interp_f(f_tab): 
+
+        #     return jnp.interp(
+        #         T_1, f_tab[:,0], f_tab[:,1], left=f_tab[0,1], right=f_tab[-1,1]
+        #     )
+
+        # f_numt_ann  = lax.cond(
+        #     collision_me, interp_f, lambda _: 1., f_numu_ann_tab
+        # )
+        # f_numt_scat = lax.cond(
+        #     collision_me, interp_f, lambda _: 1., f_numu_scat_tab
+        # )
+
+        f_ann_1  = lax.cond(
+            collision_me, interp_fa1, lambda _: 1., f_coeffs
         )
-        f_numt_scat = lax.cond(
-            collision_me, interp_f, lambda _: 1., f_numu_scat_tab
+        f_scat_1 = lax.cond(
+            collision_me, interp_fs1, lambda _: 1., f_coeffs
+        )
+
+        f_ann_2  = lax.cond(
+            collision_me, interp_fa2, lambda _: 1., f_coeffs
+        )
+        f_scat_2 = lax.cond(
+            collision_me, interp_fs2, lambda _: 1., f_coeffs
         )
         
-        return (
-            32 * f_a * f_numt_ann * (
+        return ( # f_s, f_a now folded into f_ann and f_scat
+            4 * (gmuL**2 + gmuR**2) * (32 * f_ann_1 * (
                 T_1**9 * jnp.exp(2 * mu_1 / T_1) 
                 - T_2**9 * jnp.exp(2 * mu_2 / T_2)
-            ) 
-            + 56 * f_s * f_numt_scat * (
-                jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
-                * T_1**4 * T_2**4 * (T_1 - T_2)
+                ) 
+                + 56 * f_scat_1 * (
+                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    * T_1**4 * T_2**4 * (T_1 - T_2)
+                )
+            )
+            # new terms (previously baked into tabulated rates)
+            + 4 * gmuL*gmuR * (f_ann_2 * 32 * (
+                T_1**9 * jnp.exp(2 * mu_1 / T_1) 
+                - T_2**9 * jnp.exp(2 * mu_2 / T_2)
+                )
+                + 56 * f_scat_2 * (
+                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    * T_1**4 * T_2**4 * (T_1 - T_2)
+                )
             )
         )
-
-    geL  = const.geL
-    geR  = const.geR
-    gmuL = const.gmuL
-    gmuR = const.gmuR
 
     # Units MeV^4 s^-1
-    C_rho_nue = const.GF**2 / jnp.pi**5 * (
-        4 * (geL**2 + geR**2) * G_nue_with_me(T_g, 0., T_nue, mu_nue) 
+    C_rho_nue = const.GF**2 / jnp.pi**5 * ( # prev coeff now in G def
+       G_nue_with_me(T_g, 0., T_nue, mu_nue, me) 
         + 2 * G(T_numt, mu_numt, T_nue, mu_nue)
     ) / const.hbar
 
     # Units MeV^4 s^-1
     C_rho_numu = const.GF**2 / jnp.pi**5 * (
-        4 * (gmuL**2 + gmuR**2) * G_numt_with_me(T_g, 0., T_numt, mu_numt) 
+        G_numt_with_me(T_g, 0., T_numt, mu_numt, me) 
         - G(T_numt, mu_numt, T_nue, mu_nue)
     ) / const.hbar 
 
@@ -1106,5 +1243,5 @@ def collision_terms_std(
             - T_nue**8 * jnp.exp(2 * mu_nue / T_nue)
         )
     ) / const.hbar
-
+    
     return C_rho_nue, C_rho_numu, C_n_nue, C_n_numu

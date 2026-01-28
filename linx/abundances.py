@@ -14,6 +14,7 @@ import linx.weak_rates as wr
 import linx.thermo as thermo
 from linx.thermo import rho_EM_std_v, p_EM_std_v, nB
 from linx.special_funcs import zeta_3 
+from linx.tau_n_vary_me import tau_n_fac_vary_me
 
 class AbundanceModel(eqx.Module):
     """
@@ -39,8 +40,6 @@ class AbundanceModel(eqx.Module):
         Spin of each species.
     species_binding_energy : list
         Binding energy of each species.
-    species_mass : list
-        Mass of each species.
     throw : bool
         Whether to raise exceptions on solver failure.
     """
@@ -53,7 +52,6 @@ class AbundanceModel(eqx.Module):
     species_excess_mass : dict
     species_spin : list
     species_binding_energy : list
-    species_mass : list
     throw : bool
 
     def __init__(self, nuclear_net, weak_rates=wr.WeakRates(), throw=True):
@@ -115,16 +113,17 @@ class AbundanceModel(eqx.Module):
         )
 
         # in MeV
-        self.species_mass = (
-            self.species_A * ma + self.species_excess_mass - self.species_Z * me
-        )
+        # requires recompilation for each me--moved to YNSE method
+        # self.species_mass = (
+        #     self.species_A * ma + self.species_excess_mass - self.species_Z * me
+        # )
 
     @eqx.filter_jit
     def __call__(
         self, rho_g_vec, rho_nu_vec, rho_NP_vec, P_NP_vec, 
         a_vec=None, t_vec=None, 
         eta_fac=jnp.asarray(1.), tau_n_fac = jnp.asarray(1.), 
-        nuclear_rates_q=None, 
+        nuclear_rates_q=None, me = const.me,
         Y_i=None, T_start=None, T_end=None, sampling_nTOp=150, 
         rtol=1e-6, atol=1e-9, solver=Kvaerno3(),
         max_steps=4096,
@@ -153,10 +152,12 @@ class AbundanceModel(eqx.Module):
             in `const.eta0` (or `const.Omegabh2`). 
         tau_n_fac : float, optional
             Rescaling factor for neutron decay lifetime, 1 for fiducial value 
-            in `const.eta0` (or `const.Omegabh2`). 
+            in `const.tau_n`. 
         nuclear_rates_q : array, optional
             q ~ N(0,1) specifies the nuclear rate in its log-normal 
             distribution. If not specified, will be taken to be `q = 0`. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to `const.me`.
         Y_i : tuple of float, optional
             Initial abundances :math:`n_i/n_b` for species. Length must be equal to 
             `self.nuclear_net.max_i_species`. Must specify `T_start` and `T_end` if not `None`. 
@@ -217,6 +218,11 @@ class AbundanceModel(eqx.Module):
 
             T_end  = const.T_end
 
+        # check if the user has varied me, and adjust the neutron lifetime if so
+        diff = jnp.abs(me - const.me)/const.me
+        tau_n_fac = jnp.where(diff > 1e-5, tau_n_fac_vary_me(me), 1.) * tau_n_fac
+
+
         # These are in MeV
         T_g_vec  = thermo.T_g(rho_g_vec)
         T_nu_vec = thermo.T_nu(rho_nu_vec)
@@ -266,7 +272,7 @@ class AbundanceModel(eqx.Module):
 
         T_interval_nTOp, nTOp_frwrd, nTOp_bkwrd = self.weak_rates(
             jnp.array([T_g_vec, T_nu_vec]), 
-            T_start=T_start, T_end=T_end, sampling_nTOp=sampling_nTOp
+            T_start=T_start, T_end=T_end, sampling_nTOp=sampling_nTOp, me=me
         )
 
         ##################################
@@ -285,7 +291,7 @@ class AbundanceModel(eqx.Module):
             n_CMB_start = thermo.n_massless_BE(T_start, 0., 2.)
             eta_T_start = nB(a_start, eta_fac=eta_fac) / n_CMB_start
 
-            Y_YNSE = self.YNSE(Yn_i, Yp_i, const.T_start, eta_T_start) 
+            Y_YNSE = self.YNSE(Yn_i, Yp_i, const.T_start, eta_T_start, me) 
 
             Y_others_i = Y_YNSE[2:self.nuclear_net.max_i_species]
 
@@ -527,7 +533,7 @@ class AbundanceModel(eqx.Module):
 
         return dY
 
-    def YNSE(self, Yn, Yp, T, eta): 
+    def YNSE(self, Yn, Yp, T, eta, me=const.me): 
         """
         Nuclear statistical equilibrium yields for all species. 
 
@@ -541,6 +547,8 @@ class AbundanceModel(eqx.Module):
             The temperature of the baryons in MeV.
         eta : float
             The baryon-to-photon ratio. 
+        me: float, optional
+            Electron mass in MeV.  Defaults to const.me
 
         Returns
         -------
@@ -548,8 +556,12 @@ class AbundanceModel(eqx.Module):
             Yields for all species considered in LINX (13 of them). 
         """
 
+        species_mass = (
+            self.species_A * ma + self.species_excess_mass - self.species_Z * me
+        )
+
         A32Overmn = (
-            self.species_mass / (
+            species_mass / (
                 mn**(self.species_A - self.species_Z) 
                 * mp**self.species_Z
             )

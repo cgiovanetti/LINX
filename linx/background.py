@@ -41,9 +41,11 @@ class BackgroundModel(eqx.Module):
     collision_me : bool
     LO : bool
     NLO : bool
+    max_steps : int
     throw : bool
 
-    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO=True, throw=True):
+    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True, throw=True, max_steps=512): 
+
         """
         Initialize the BackgroundModel with thermodynamic options.
 
@@ -70,13 +72,14 @@ class BackgroundModel(eqx.Module):
         self.collision_me = collision_me
         self.LO = LO
         self.NLO = NLO
+        self.max_steps = max_steps
         self.throw = throw
 
     @eqx.filter_jit
     def __call__(
         self, Delt_Neff_init, T_start=const.T_start, 
-        T_end=const.T_end, rtol=1e-8, atol=1e-10, 
-        solver=Tsit5(), max_steps=512
+        T_end=const.T_end,  me=const.me, rtol=1e-8, atol=1e-10,
+        solver=Tsit5(),
     ): 
         """ Calculate thermodynamics given an initial :math:`\\Delta N_\\mathrm{eff}`.
 
@@ -84,11 +87,13 @@ class BackgroundModel(eqx.Module):
         ----------
         Delt_Neff_init : float
             Initial :math:`\\Delta N_\\mathrm{eff}`.  Can be positive or negative.  
-        T_EM_init : float
+        T_EM_init : float, optional
             Initial EM (and neutrino) temperature. Default is `const.T_start`. 
-        T_EM_end : float 
+        T_EM_end : float, optional
             Final EM temperature to terminate integration at. Default is
             `const.T_end`. 
+        me : float, optional
+            Electron mass in MeV.  Defaults to `const.me`.
         rtol : float, optional
             Relative tolerance of the abundance solver. Default is `1e-8`.  
         atol : float, optional
@@ -133,18 +138,23 @@ class BackgroundModel(eqx.Module):
         ) * Delt_Neff_init
 
         Y0 = (lna_init, T_EM_init, T_nu_init)
+
+        # use parametric form to estimate correct start
+        # time given T_start, assuming T ~ t^(-1/2) and
+        # initial g_* is 10.75
+        t0 = (1.5/T_start * 10.75**(-1./4))**2
         
         def T_EM_check(t, y, args, **kwargs): 
             return y[1] < T_end
             
         sol = diffeqsolve(
-            ODETerm(self.dY), solver, args=(lna_init, rho_extra_init),
-            t0=0., t1=jnp.inf, dt0=None, y0=Y0,
+            ODETerm(self.dY), solver, args=(lna_init, rho_extra_init, me),
+            t0 = t0, t1=jnp.inf, dt0=None, y0=Y0, 
             saveat=SaveAt(steps=True), event=Event(T_EM_check),
             stepsize_controller=PIDController(
                 rtol=rtol, atol=atol
-            ),
-            max_steps=max_steps,
+            ), 
+            max_steps=self.max_steps,
             throw=self.throw
         )
 
@@ -159,7 +169,7 @@ class BackgroundModel(eqx.Module):
         last_step_ind = jnp.max(
             jnp.argwhere(
                 sol.ys[1] < T_end,
-                size=512
+                size=self.max_steps
             )[:,0]
         )
 
@@ -218,11 +228,11 @@ class BackgroundModel(eqx.Module):
         """
 
         lna, T_g, T_nu = Y
-        lna_init, rho_extra_init = args
+        lna_init, rho_extra_init, me = args
 
-        rho_EM = thermo.rho_EM_std(T_g, LO=self.LO, NLO=self.NLO)
-        rho_plus_p_EM = thermo.rho_plus_p_EM_std(T_g, LO=self.LO, NLO=self.NLO)
-        drho_EM_dT_g = thermo.drho_EM_dT_g_std(T_g, LO=self.LO, NLO=self.NLO)
+        rho_EM = thermo.rho_EM_std(T_g, me=me, LO=self.LO, NLO=self.NLO)
+        rho_plus_p_EM = thermo.rho_plus_p_EM_std(T_g, me=me, LO=self.LO, NLO=self.NLO)
+        drho_EM_dT_g = thermo.drho_EM_dT_g_std(T_g, me=me, LO=self.LO, NLO=self.NLO)
 
         rho_nu = 3*thermo.rho_nue_std(T_nu)
         rho_plus_p_nu = (4/3) * rho_nu
@@ -233,7 +243,7 @@ class BackgroundModel(eqx.Module):
         H = thermo.Hubble(rho_EM + rho_nu + rho_extra)
 
         C_rho_nue, C_rho_numu, _, _ = thermo.collision_terms_std(
-            T_g, T_nu, T_nu, decoupled=self.decoupled, use_FD=self.use_FD, collision_me=self.collision_me
+            T_g, T_nu, T_nu, me=me, decoupled=self.decoupled, use_FD=self.use_FD, collision_me=self.collision_me
         )
 
         drho_EM_dt = -3 * H * rho_plus_p_EM - C_rho_nue - 2*C_rho_numu
