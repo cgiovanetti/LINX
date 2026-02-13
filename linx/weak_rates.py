@@ -544,25 +544,25 @@ class WeakRates(eqx.Module):
         )
 
     def chi_Born(self, en, x, x_nu, sgnq, me=const.me):
-        """
-        Integrand in momentum integral for Born weak rate. 
+        r"""
+        Integrand in momentum integral for Born weak rate.
 
         Parameters
         ----------
         en : float
             Dimensionless energy of the electron, normalized to electron mass.
         x : float
-            Dimensionless inverse EM temperature, normalized to electron mass. 
-        x_nu : float 
-            Dimensionless inverse nu temperature, normalized to electron mass. 
+            Dimensionless inverse EM temperature, normalized to electron mass.
+        x_nu : float
+            Dimensionless inverse nu temperature, normalized to electron mass.
         sqnq : int
-            Should have value +1 or -1, to switch between chi_+ and chi_-. 
+            Should have value +1 or -1, to switch between chi\_+ and chi\_-.
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
 
         Notes
         -----
-        See Pitrou+ 1801.08023 Eq. (79). 
+        See Pitrou+ 1801.08023 Eq. (79).
 
         """
 
@@ -576,17 +576,17 @@ class WeakRates(eqx.Module):
         return e_nu**2 * g_nu * g_e 
     
     def Fermi_sgn(self, sgnq, sgnE, b, me=const.me):
-        """
-        Fermi function, with a check for proton and electron final state. 
+        r"""
+        Fermi function, with a check for proton and electron final state.
 
         Parameters
         ----------
         sgnq : int
-            +1 or -1 to choose between F_+ and F_-. 
+            +1 or -1 to choose between F\_+ and F\_-.
         sgnE : int
-            +1 or -1 to choose between positive or negative arguments of F. 
+            +1 or -1 to choose between positive or negative arguments of F.
         b : float
-            The speed of the electron. 
+            The speed of the electron.
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
         
@@ -597,7 +597,7 @@ class WeakRates(eqx.Module):
 
         Notes
         -----
-        See Pitrou+ 1801.08023 Eq. (102). 
+        See Pitrou+ 1801.08023 Eq. (102).
         """
         
         result = jnp.where(sgnq*sgnE > 0, self.Fermi(b, me), 1.)
@@ -735,34 +735,34 @@ class WeakRates(eqx.Module):
        
        
     def chi_FM(self, en, x, x_nu, sgnq, me=const.me):
-        """
+        r"""
         Integrand over momentum for finite mass correction to n <-> p rate.
 
         Parameters
         ----------
         en : float
-            Dimensionless energy of the electron, normalized to the electron 
-            mass. 
+            Dimensionless energy of the electron, normalized to the electron
+            mass.
         x : float
-            Dimensionless EM inverse temperature, normalized to the electron 
-            mass. 
+            Dimensionless EM inverse temperature, normalized to the electron
+            mass.
         x_nu : float
-            Dimensionless neutrino inverse temperature, normalized to the 
-            electron mass. 
+            Dimensionless neutrino inverse temperature, normalized to the
+            electron mass.
         sgnq : int
-            +1 or -1 corresponding to chi_+ or chi_-. 
+            +1 or -1 corresponding to chi\_+ or chi\_-.
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
 
         Notes
         -----
         See Pitrou+ 1801.08023 Eq. (B23). However, instead of m_N, this appears
-        to choose m_p for + and m_n for -. This is consistent with PRIMAT, and 
-        probably makes sense, since we should apply the finite mass correction 
-        to the outgoing state. 
+        to choose m_p for + and m_n for -. This is consistent with PRIMAT, and
+        probably makes sense, since we should apply the finite mass correction
+        to the outgoing state.
 
-        Note also a typo on the first term Eq. (B23) (on dimensional grounds), 
-        corrected in PRIMAT. It should be g_nu^(2,0) as well. 
+        Note also a typo on the first term Eq. (B23) (on dimensional grounds),
+        corrected in PRIMAT. It should be g_nu^(2,0) as well.
 
         """
         pe = jnp.sqrt(en**2 - 1)

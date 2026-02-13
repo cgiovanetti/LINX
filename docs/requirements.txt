@@ -24,5 +24,6 @@ pathtools
 pickleshare
 pytest
 scipy
+sphinx-rtd-theme
 tensorflow
 tqdm

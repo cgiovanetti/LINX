@@ -146,7 +146,7 @@ def Riemann_zeta(n):
 
 @partial(jax.jit, static_argnums=(0,))
 def Li(n, z):
-    """
+    r"""
     Polylogarithm of order n and argument z.
 
     Parameters
@@ -163,10 +163,10 @@ def Li(n, z):
 
     Notes
     -----
-    Uses different series expansions depending on |z|:
-    - |z| ≤ 0.5: direct series
-    - 0.5 < |z| < 2: intermediate series with harmonic terms
-    - |z| ≥ 2: reciprocal series with Bernoulli polynomials
+    Uses different series expansions depending on \|z\|:
+    - \|z\| ≤ 0.5: direct series
+    - 0.5 < \|z\| < 2: intermediate series with harmonic terms
+    - \|z\| ≥ 2: reciprocal series with Bernoulli polynomials
     """
     def _Li_z_small(z): 
     
