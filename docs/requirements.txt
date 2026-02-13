@@ -9,6 +9,7 @@ diffrax
 dynesty
 emcee
 equinox
+interpax
 jax
 jaxlib
 jaxopt
