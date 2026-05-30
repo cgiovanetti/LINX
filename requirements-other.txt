@@ -1,0 +1,16 @@
+-r requirements.txt
+dynesty
+scipy
+corner
+cycler
+matplotlib
+palettable
+seaborn
+tqdm
+classy
+schwimmbad
+absl-py
+cosmopower-jax
+numpyro
+optax
+pytest
