@@ -29,15 +29,6 @@ pip install -r requirements.txt
 ```
 (Include `path/to/requirements.txt` if you're in a different directory.)  Verify your JAX installation by opening up python in terminal and attempting to `import jax`. 
 
-If you'd like to install a minimal set of packages just to run LINX without the SVI examples, you can run
-```
-conda create --name linx
-conda activate linx
-conda install --yes scipy matplotlib numpy jupyter
-pip install diffrax==0.4.1 jax==0.4.28 jaxlib==0.4.28
-```
-(pip or conda can be used for `scipy`, `matplotlib`, `numpy`, and `jupyter`.)
-
 ## Repository structure
 
 Modules of the code are contained in the `linx` directory, along with the various sets of BBN reaction rates that ship with LINX.  
