@@ -29,6 +29,17 @@ pip install -r requirements.txt
 ```
 (Include `path/to/requirements.txt` if you're in a different directory.)  Verify your JAX installation by opening up python in terminal and attempting to `import jax`. 
 
+This will install the minimum set of dependencies, with the latest versions of your packages available with your selected python version.
+
+If you are running with python <= 3.10, or if you are willing to tolerate old JAX versions for 2x faster runtimes, instead run 
+
+```
+conda create --name linx
+conda activate linx
+pip install -r requirements-fast.txt
+python -m pip install --no-deps interpax==0.3.1
+```
+
 ## Repository structure
 
 Modules of the code are contained in the `linx` directory, along with the various sets of BBN reaction rates that ship with LINX.  
