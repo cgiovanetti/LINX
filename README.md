@@ -40,6 +40,8 @@ pip install -r requirements-fast.txt
 python -m pip install --no-deps interpax==0.3.1
 ```
 
+Finally, `requirements-other.txt` provides all auxiliary packages needed to run all notebooks and analyses in this repo.
+
 ## Repository structure
 
 Modules of the code are contained in the `linx` directory, along with the various sets of BBN reaction rates that ship with LINX.  
