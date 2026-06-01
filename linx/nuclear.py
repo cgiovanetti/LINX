@@ -63,6 +63,7 @@ class NuclearRates(eqx.Module):
         nuclear_net : str
             Used for fixed networks, choices are: 
             'np_only': Only n <-> p rates will be used. 
+            'key_recommended': Recommended small reaction network (PRIMAT2023 + new npdg)
             'key_PRIMAT_2018': PRIMAT 2018 small network rates, also used 
             by PRyMordial. 
             'key_YOF': YOF small network rates, also used by 
@@ -292,6 +293,7 @@ class NuclearRates(eqx.Module):
         ----------
         network : str
             Nuclear network of interest. Choices are: 
+            'key_recommended': Recommended small reaction network (PRIMAT2023 + new npdg)
             'key_PRIMAT_2018': PRIMAT 2018 key network rates, also used 
             by PRyMordial. 
             'key_YOF': YOF key network rates, also used by 
@@ -313,6 +315,7 @@ class NuclearRates(eqx.Module):
                 network == 'key_PRIMAT_2018' 
                 or network == 'key_YOF' 
                 or network == 'key_PRIMAT_2023'
+                or network == 'key_recommended'
             ): 
                 key_network_str = network 
             elif network == 'full_PRIMAT_2018': 
