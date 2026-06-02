@@ -313,6 +313,7 @@ class NuclearRates(eqx.Module):
                 network == 'key_PRIMAT_2018' 
                 or network == 'key_YOF' 
                 or network == 'key_PRIMAT_2023'
+                or network == 'key_recommend'
             ): 
                 key_network_str = network 
             elif network == 'full_PRIMAT_2018': 
