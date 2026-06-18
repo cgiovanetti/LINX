@@ -303,12 +303,14 @@ class AbundanceModel(eqx.Module):
             # Default SaveAt
             saveat = SaveAt(t1=True)
 
+        # Precompute rate tables once, outside the ODE RHS.
+        rate_tables = self.nuclear_net.precompute_rate_tables(nuclear_rates_q)
         sol = diffeqsolve(
             ODETerm(self.Y_prime), solver,
             t0=t_start, t1=t_end, dt0=None, y0=Y_i,
             args=(
                 a_vec, t_vec, T_g_vec, T_interval_nTOp, nTOp_frwrd,
-                nTOp_bkwrd, eta_fac, tau_n_fac, nuclear_rates_q
+                nTOp_bkwrd, eta_fac, tau_n_fac, rate_tables
             ),
             saveat=saveat,
             stepsize_controller=PIDController(
@@ -488,7 +490,18 @@ class AbundanceModel(eqx.Module):
         Y : array
             Array of abundances for evaluating :math:`dY_i/dt`. 
         args : tuple of arrays
-            Other relevant information for evaluating the derivative. These are respectively, 0) an array of scale factors; 1) an array of times; 2) an array of EM sector temperatures; 3) an array representing the abscissa of EM sector temperatures for evaluating weak rates; 4) an array of n -> p rates to interpolate over; 5) an array of p -> n rates to interpolate over; 6) the rescaling factor for baryon-to-photon ratio `eta_fac`; 7) the rescaling factor for neutron decay lifetime `tau_n_fac` and 8) the array rescaling nuclear rates, `nuclear_rates_q`. 
+            Other relevant information for evaluating the derivative. 
+            These are respectively, 
+            0) an array of scale factors; 
+            1) an array of times; 
+            2) an array of EM sector temperatures; 
+            3) an array representing the abscissa of EM sector temperatures 
+            for evaluating weak rates; 
+            4) an array of n -> p rates to interpolate over; 
+            5) an array of p -> n rates to interpolate over; 
+            6) the rescaling factor for baryon-to-photon ratio `eta_fac`; 
+            7) the rescaling factor for neutron decay lifetime `tau_n_fac` and 
+            8) the pre-computed rate tables, `rate_tables` (built once from nuclear_rates_q) 
 
         Returns
         -------
@@ -505,7 +518,7 @@ class AbundanceModel(eqx.Module):
         nTOp_bkwrd_vec_in = args[5]
         eta_fac = args[6]
         tau_n_fac = args[7] 
-        nuclear_rates_q = args[8]
+        rate_tables = args[8]
         
         a_in  = a_vec_in[0]
         a_fin = a_vec_in[-1]
@@ -528,7 +541,7 @@ class AbundanceModel(eqx.Module):
         dY = self.nuclear_net(
             Y, T_t, rhoBBN, T_interval_in, nTOp_frwrd_vec_in,
             nTOp_bkwrd_vec_in, tau_n_fac=tau_n_fac, 
-            nuclear_rates_q=nuclear_rates_q
+            rate_tables = rate_tables
         )
 
         return dY

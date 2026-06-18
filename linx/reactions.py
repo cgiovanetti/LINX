@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 
@@ -201,6 +202,9 @@ class Reaction(eqx.Module):
         The rate here is either <sigma v> or <sigma v^2> divided by 
         (1 amu)^(N_in-1)) for each reaction, units (cm^3/s/g or cm^6/s/g^2). 
         """
+        warnings.warn('Reaction.frwrd_rate_param is deprecated.  '
+        'Use table = frwrd_rate_table(q), frwrd_rate_from_table(T, table) instead.',
+        FutureWarning, stacklevel=2)
 
         T9 = T*1e-9
 
@@ -209,7 +213,7 @@ class Reaction(eqx.Module):
             if self.interp_type == 'linear':
 
                 rate_vec = self.mu_median_vec * jnp.exp(
-                    p * self.log_expsigma_vec
+                    p * self.log_expsigma_vec # builds rate_vec at every step--wasteful
                 )
                 return jnp.interp(
                     T9, self.T9_vec, rate_vec, left=0., right=0.
@@ -229,6 +233,60 @@ class Reaction(eqx.Module):
         else:
 
             return self.frwrd_rate_param_func(T, p)
+
+    @eqx.filter_jit
+    def frwrd_rate_table(self, q):
+        """
+        Precompute the q-dependent, T-independent part of the forward rate.
+
+        Parameters
+        ----------
+        q : float
+            Rescaling parameter for expsigma
+
+        Returns
+        -------
+        Array or float
+            Forward rate with q rescaling
+
+        """
+        if self.T9_vec is not None:
+            if self.interp_type == 'linear':
+                return self.mu_median_vec * jnp.exp(q * self.log_expsigma_vec)
+            elif self.interp_type == 'log':
+                return self.log_mu_median_vec + q * self.log_expsigma_vec
+        else:
+            return q
+
+        
+    @eqx.filter_jit
+    def frwrd_rate_from_table(self, T, table):
+        """
+        Forward rate at a temperature T given the precomputed table.
+
+        Parameters
+        ----------
+        T : float
+            Temperature in K.
+        table : Array or float
+            Output scaled rate from `self.frwrd_rate_table(q)`.  For interpolated
+            reactions this is the q-dependent rate table.  For analytic reactions, 
+            it is just the scalar q.
+        
+        Returns
+        -------
+        float
+            Forward rate at temperature T.
+        """
+        T9 = T*1e-9
+
+        if self.T9_vec is not None:
+            if self.interp_type == 'linear':
+                return jnp.interp(T9, self.T9_vec,table, left=0., right=0.)
+            elif self.interp_type == 'log':
+                return jnp.exp(jnp.interp(jnp.log(T9), self.log_T9_vec, table, left=0., right=0.))
+        else:
+            return self.frwrd_rate_param_func(T,table) # analytic
 
     @eqx.filter_jit
     def bkwrd_rate_param(self, T, p): 
@@ -257,9 +315,34 @@ class Reaction(eqx.Module):
         The rate here is either <sigma v> or <sigma v^2> divided by 
         (1 amu)^(N_in-1)) for each reaction, units (cm^3/s/g or cm^6/s/g^2). 
         """
+        warnings.warn('Reaction.bkwrd_rate_param is deprecated.  '
+        'Use table = frwrd_rate_table(q), bkwrd_rate_from_table(T, table) instead.',
+        FutureWarning, stacklevel=2)
         T9 = T*1e-9
 
         return self.alpha*T9**self.beta*jnp.exp(self.gamma/T9) * (
             self.frwrd_rate_param(T, p)
         )
 
+    @eqx.filter_jit
+    def bkwrd_rate_from_table(self, T, table):
+        """
+        Backward rate at temperature T given the precomputed forward table.
+
+        Parameters
+        ----------
+        T : float
+            Temperature in K.
+        table : Array or float
+            Output of `frwrd_rate_table(q)`.
+
+        Returns
+        -------
+        float
+            Backward rate at temperature T.
+        """
+        T9 = T*1e-9
+
+        return self.alpha * T9**self.beta * jnp.exp(self.gamma/T9) * (
+            self.frwrd_rate_from_table(T,table)
+        )
