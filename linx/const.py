@@ -1,6 +1,11 @@
-import jax
-import jax.numpy as jnp
-jax.config.update("jax_enable_x64", True) # need this to enable float64
+try:
+    import jax
+    import jax.numpy as jnp
+    jax.config.update("jax_enable_x64", True)  # need this to enable float64
+except ImportError:
+    import numpy as np
+    jnp = np
+    jax = None
 
 from linx.special_funcs import zeta_3 
 
@@ -72,7 +77,8 @@ GF = 1.1663787e-5*1.e-6 # MeV-2
 sW2 = 0.5*(1.-jnp.sqrt(1.-2.*jnp.sqrt(2.)*jnp.pi*aFS/(GF*mZ**2)))
 
 # Electron and muon coupling to Z 
-geL, geR, gmuL, gmuR = 1./2.+sW2, sW2, -1./2.+sW2, sW2
+geL, geR, gmuL, gmuR = 0.727, 0.233, -0.273, 0.233 #from NuDec_Const
+#geL, geR, gmuL, gmuR = 1./2.+sW2, sW2, -1./2.+sW2, sW2
 
 # G_Newton in MeV^-2
 GN  = 6.70883e-39*1e-6

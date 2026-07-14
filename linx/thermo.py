@@ -6,6 +6,7 @@ import jax.numpy as jnp
 import jax.lax as lax
 from jax import grad, vmap, device_put, devices
 import interpax
+from numpy.strings import index
 
 import linx.const as const 
 from linx.special_funcs import Li, K1, K2
@@ -1022,13 +1023,14 @@ def collision_terms_std(
 
     
     """ 
-
-    f_n, f_a, f_s = lax.cond(
+#define a new constant here from miguels code. zero math limit from the data files in miguel's code. 
+    f_n, f_a, f_s, fa3 = lax.cond(
         decoupled, 
-        lambda _: (0., 0., 0.), 
+        lambda _: (0., 0., 0., 0.), 
         lambda _: lax.cond(
-            use_FD, lambda _: (0.852, 0.884, 0.829), 
-            lambda _: (1., 1., 1.), 0.
+            use_FD, lambda _: (0.852, 0.884, 0.829, 0.00318), 
+            lambda _: (1., 1., 1., 0.), 
+            0.
         ), 
         0.
     )
@@ -1039,13 +1041,20 @@ def collision_terms_std(
     gmuR = const.gmuR
 
     def G(T_1, mu_1, T_2, mu_2): 
-        
         return (
             32 * f_a * (
                 T_1**9 * jnp.exp(2 * mu_1 / T_1) 
                 - T_2**9 * jnp.exp(2 * mu_2 / T_2)
             ) 
-            + 56 * f_s * jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) *(   
+#added new term from nudec
+            + 32 * fa3 * (
+                (T_1*T_2)**4.5
+                * (
+                    jnp.exp(2 * mu_2 / T_2)
+                    - jnp.exp(2 * mu_1 / T_1)
+                )
+            )
+            + 56 * f_s * jnp.exp(mu_1 / T_1) * jnp.exp(mu_2 / T_2) *(   
                 T_1**4 * T_2**4 * (T_1 - T_2)
             )
         )
@@ -1060,6 +1069,19 @@ def collision_terms_std(
 
         def interp_fa2(f_tab): 
             index = 2
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+        
+        #defined interpolators 3 and 4.  
+        def interp_fa3(f_tab): 
+            index = 3
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+
+        def interp_fa4(f_tab): 
+            index = 4
             return jnp.interp(
                 me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
             )
@@ -1109,13 +1131,27 @@ def collision_terms_std(
             collision_me, interp_fs2, lambda _: 1., f_coeffs
         )
         
+        f_ann_3 = lax.cond(
+            collision_me, interp_fa3, lambda _: 0., f_coeffs
+        )
+        f_ann_4 = lax.cond(
+            collision_me, interp_fa4, lambda _: 0., f_coeffs
+        )   
+
         return ( # note f_a and f_s are now folded into f_nue_ann/scat
               4 * (geL**2 + geR**2) * (32 * f_ann_1 * (
                 T_1**9 * jnp.exp(2 * mu_1 / T_1) 
                 - T_2**9 * jnp.exp(2 * mu_2 / T_2)
                     ) 
+                + 32 * f_ann_3 * (
+                    (T_1*T_2)**4.5
+                    * (
+                        jnp.exp(2 * mu_2 / T_2)
+                        - jnp.exp(2 * mu_1 / T_1)
+                    )
+                )           
                 + 56 * f_scat_1 * (
-                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    jnp.exp(mu_1 / T_1) * jnp.exp(mu_2 / T_2) 
                     * T_1**4 * T_2**4 * (T_1 - T_2)
                 )
             )
@@ -1124,8 +1160,15 @@ def collision_terms_std(
                 T_1**9 * jnp.exp(2 * mu_1 / T_1) 
                 - T_2**9 * jnp.exp(2 * mu_2 / T_2)
                 )
+                + 32 * f_ann_4 * (
+                    (T_1*T_2)**4.5
+                    * (
+                        jnp.exp(2 * mu_2 / T_2)
+                        - jnp.exp(2 * mu_1 / T_1)
+                    )
+                )           
                 + 56 * f_scat_2 * (
-                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    jnp.exp(mu_1 / T_1) * jnp.exp(mu_2 / T_2) 
                     * T_1**4 * T_2**4 * (T_1 - T_2)
                 )
             )
@@ -1141,6 +1184,18 @@ def collision_terms_std(
 
         def interp_fa2(f_tab): 
             index = 2
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+        
+        def interp_fa3(f_tab): 
+            index = 3
+            return jnp.interp(
+                me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
+            )
+
+        def interp_fa4(f_tab): 
+            index = 4
             return jnp.interp(
                 me/T_1, f_tab[:,0], f_tab[:,index], left=f_tab[0,index], right=f_tab[-1,index]
             )
@@ -1190,24 +1245,45 @@ def collision_terms_std(
             collision_me, interp_fs2, lambda _: 1., f_coeffs
         )
         
-        return ( # f_s, f_a now folded into f_ann and f_scat
-            4 * (gmuL**2 + gmuR**2) * (32 * f_ann_1 * (
-                T_1**9 * jnp.exp(2 * mu_1 / T_1) 
+        f_ann_3 = lax.cond(
+            collision_me, interp_fa3, lambda _: 0., f_coeffs
+        )
+        f_ann_4 = lax.cond(
+            collision_me, interp_fa4, lambda _: 0., f_coeffs
+        )
+        # f_s, f_a now folded into f_ann and f_scat
+        return (
+            (gmuL**2 + gmuR**2) * 32 * f_ann_1 * (
+                T_1**9 * jnp.exp(2 * mu_1 / T_1)
                 - T_2**9 * jnp.exp(2 * mu_2 / T_2)
-                ) 
+            )
+            + 32 * f_ann_3 * (
+                (T_1*T_2)**4.5
+                * (
+                    jnp.exp(2 * mu_2 / T_2)
+                    - jnp.exp(2 * mu_1 / T_1)
+                )
                 + 56 * f_scat_1 * (
-                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
+                    jnp.exp(mu_1 / T_1) * jnp.exp(mu_2 / T_2)
                     * T_1**4 * T_2**4 * (T_1 - T_2)
                 )
             )
             # new terms (previously baked into tabulated rates)
-            + 4 * gmuL*gmuR * (f_ann_2 * 32 * (
-                T_1**9 * jnp.exp(2 * mu_1 / T_1) 
-                - T_2**9 * jnp.exp(2 * mu_2 / T_2)
+            + 4 * gmuL*gmuR * (
+                f_ann_2 * 32 * (
+                    T_1**9 * jnp.exp(2 * mu_1 / T_1)
+                    - T_2**9 * jnp.exp(2 * mu_2 / T_2)
                 )
-                + 56 * f_scat_2 * (
-                    jnp.exp(2 * mu_1 / T_1) * jnp.exp(2 * mu_2 / T_2) 
-                    * T_1**4 * T_2**4 * (T_1 - T_2)
+                + 32 * f_ann_4 * (
+                    (T_1*T_2)**4.5
+                    * (
+                        jnp.exp(2 * mu_2 / T_2)
+                        - jnp.exp(2 * mu_1 / T_1)
+                    )
+                    + 56 * f_scat_2 * (
+                        jnp.exp(mu_1 / T_1) * jnp.exp(mu_2 / T_2)
+                        * T_1**4 * T_2**4 * (T_1 - T_2)
+                    )
                 )
             )
         )
