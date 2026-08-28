@@ -134,6 +134,7 @@ class WeakRates(eqx.Module):
     @eqx.filter_jit
     def __call__(
         self, T_vec_ref, T_start, T_end, sampling_nTOp, me=const.me,
+        xi_nu=jnp.asarray(0.),
     ): 
         """
         Evaluate n <-> p rates over range of EM temperatures. 
@@ -150,6 +151,12 @@ class WeakRates(eqx.Module):
             Number of points between T_start and T_end to evaluate at. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter,
+            xi_nu = mu_nu_e / T_nu_e, i.e. the lepton asymmetry chemical
+            potential in units of the neutrino temperature. Positive
+            values favour n -> p and therefore lower Yp. Defaults to 0
+            (no lepton asymmetry).
 
         Returns
         -------
@@ -165,12 +172,14 @@ class WeakRates(eqx.Module):
             jnp.log10(T_start), jnp.log10(T_end), sampling_nTOp
         )
 
-        nTOp_rates = self.nTOp_rates(T_interval, T_vec_ref, me)
+        nTOp_rates = self.nTOp_rates(T_interval, T_vec_ref, me, xi_nu)
 
         return (T_interval, ) + nTOp_rates
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None))
-    def nTOp_rates(self, Tg, T_vec_ref, me=const.me): 
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
+    def nTOp_rates(
+        self, Tg, T_vec_ref, me=const.me, xi_nu=jnp.asarray(0.)
+    ): 
         """
         Dimensionless n <-> p rates, normalized to neutron decay width.
 
@@ -183,6 +192,9 @@ class WeakRates(eqx.Module):
             for computing the weak rates. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -233,8 +245,8 @@ class WeakRates(eqx.Module):
         pTOn_rate = 0. 
 
         y_CCR_vals = jnp.array([
-            self.dGamma_nTOp_dp(p_vals, x, xnu, me), 
-            self.dGamma_pTOn_dp(p_vals, x, xnu, me)
+            self.dGamma_nTOp_dp(p_vals, x, xnu, me, xi_nu), 
+            self.dGamma_pTOn_dp(p_vals, x, xnu, me, xi_nu)
         ])
         CCR_rates = trapz(y_CCR_vals, p_vals)
         nTOp_rate += CCR_rates[0] / lambda_0 
@@ -243,8 +255,8 @@ class WeakRates(eqx.Module):
         if self.FM_corr:
     
             y_FMCCR_vals = jnp.array([ 
-                self.ddelt_Gamma_nTOp_FM_dp(p_vals, x, xnu, me),
-                self.ddelt_Gamma_pTOn_FM_dp(p_vals, x, xnu, me)
+                self.ddelt_Gamma_nTOp_FM_dp(p_vals, x, xnu, me, xi_nu),
+                self.ddelt_Gamma_pTOn_FM_dp(p_vals, x, xnu, me, xi_nu)
             ])
             FMCCR_rates = trapz(y_FMCCR_vals, p_vals)
             nTOp_rate += FMCCR_rates[0] / lambda_0 
@@ -252,6 +264,11 @@ class WeakRates(eqx.Module):
 
         if self.thermal_corr: 
 
+            # NOTE: these tables are pre-tabulated assuming SBBN, i.e.
+            # xi_nu = 0, and so do not track a lepton asymmetry. The
+            # residual xi_nu dependence of these sub-percent
+            # corrections is neglected. (PRyMordial recomputes the
+            # equivalent quantity on the fly with xi_nu in Chitilde.)
             thermal_rates = jnp.array([
                 jnp.interp(
                     Tg, 
@@ -543,7 +560,7 @@ class WeakRates(eqx.Module):
             * R_rad * self.Fermi(b, me)
         )
 
-    def chi_Born(self, en, x, x_nu, sgnq, me=const.me):
+    def chi_Born(self, en, x, x_nu, sgnq, me=const.me, xi_nu=0.):
         r"""
         Integrand in momentum integral for Born weak rate.
 
@@ -559,18 +576,23 @@ class WeakRates(eqx.Module):
             Should have value +1 or -1, to switch between chi\_+ and chi\_-.
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Notes
         -----
         See Pitrou+ 1801.08023 Eq. (79).
 
-        """
+        Lepton asymmetry sign convention is mu = +xi_nu*T_nu for
+        nu_e (sgnq = +1, n -> p) and -xi_nu*T_nu for nubar_e
+        (sgnq = -1, p -> n).
 
-        # xi_nu = 0. # nu chemical potential set to zero for now. 
+        """
 
         # sgnq = +1 corresponds to chi_plus. 
         e_nu = en - sgnq*(Q/me) 
-        g_nu = expit(-x_nu*e_nu)
+        g_nu = expit(sgnq*xi_nu - x_nu*e_nu)
         g_e  = expit(-x*(-en))
 
         return e_nu**2 * g_nu * g_e 
@@ -607,7 +629,7 @@ class WeakRates(eqx.Module):
     # n<->p Rates                 #
     ###############################
        
-    def dGamma_dp(self, p, x, x_nu, sgnq, me=const.me):
+    def dGamma_dp(self, p, x, x_nu, sgnq, me=const.me, xi_nu=0.):
         """
         Integrand over momentum for n <-> p rate.  including radiative 
         corrections.
@@ -627,6 +649,9 @@ class WeakRates(eqx.Module):
             +1 or -1, to select between n -> p or p -> n. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -656,16 +681,16 @@ class WeakRates(eqx.Module):
 
         return p**2 * (
             (
-                self.chi_Born(en, x, x_nu, sgnq, me)
+                self.chi_Born(en, x, x_nu, sgnq, me, xi_nu)
                 * RC_term_plus
             ) + (
-                self.chi_Born(-en, x, x_nu, sgnq, me)
+                self.chi_Born(-en, x, x_nu, sgnq, me, xi_nu)
                 * RC_term_minus
             )
         )
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
-    def dGamma_nTOp_dp(self, p, x, xnu, me=const.me):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None, None))
+    def dGamma_nTOp_dp(self, p, x, xnu, me=const.me, xi_nu=0.):
         """
         Integrand over momentum for n -> p rate including radiative 
         corrections.
@@ -683,6 +708,9 @@ class WeakRates(eqx.Module):
             electron mass. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -693,10 +721,10 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (101). 
         """
 
-        return self.dGamma_dp(p, x, xnu, 1, me)
+        return self.dGamma_dp(p, x, xnu, 1, me, xi_nu)
     
-    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
-    def dGamma_pTOn_dp(self, p, x, xnu, me=const.me):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None, None))
+    def dGamma_pTOn_dp(self, p, x, xnu, me=const.me, xi_nu=0.):
         """
         Integrand over momentum for p -> n rate including radiative 
         corrections.
@@ -716,6 +744,9 @@ class WeakRates(eqx.Module):
             +1 or -1, to select between n -> p or p -> n. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -726,7 +757,7 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (104). 
         """
 
-        return self.dGamma_dp(p, x, xnu, -1, me)
+        return self.dGamma_dp(p, x, xnu, -1, me, xi_nu)
     
     
     ###########################
@@ -734,7 +765,7 @@ class WeakRates(eqx.Module):
     ###########################
        
        
-    def chi_FM(self, en, x, x_nu, sgnq, me=const.me):
+    def chi_FM(self, en, x, x_nu, sgnq, me=const.me, xi_nu=0.):
         r"""
         Integrand over momentum for finite mass correction to n <-> p rate.
 
@@ -753,6 +784,9 @@ class WeakRates(eqx.Module):
             +1 or -1 corresponding to chi\_+ or chi\_-.
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Notes
         -----
@@ -794,8 +828,8 @@ class WeakRates(eqx.Module):
         # Dimensionless energy of the neutrino. 
         en_nu = en - sgnq*Q / me
 
-        expit_neg = expit(-en_nu*x_nu)
-        expit_pos = expit(en_nu*x_nu)
+        expit_neg = expit(sgnq*xi_nu - en_nu*x_nu)
+        expit_pos = expit(en_nu*x_nu - sgnq*xi_nu)
 
         res_e2p1 = (
             2 * en_nu * expit_neg**2 
@@ -855,7 +889,7 @@ class WeakRates(eqx.Module):
         )
         return result
 
-    def ddelt_Gamma_FM_dp(self, p, x, znu, sgnq, me=const.me):
+    def ddelt_Gamma_FM_dp(self, p, x, znu, sgnq, me=const.me, xi_nu=0.):
         """
         Integrand over momentum for finite mass corrections to the n <-> p
         rate. 
@@ -875,6 +909,9 @@ class WeakRates(eqx.Module):
             +1 or -1, to select between n -> p or p -> n. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -903,17 +940,17 @@ class WeakRates(eqx.Module):
 
         result =  p**2 * (
             (
-                self.chi_FM(en, x, znu, sgnq, me) 
+                self.chi_FM(en, x, znu, sgnq, me, xi_nu) 
                 * RC_term_plus 
             ) + (
-                self.chi_FM(-en, x, znu, sgnq, me) 
+                self.chi_FM(-en, x, znu, sgnq, me, xi_nu) 
                 * RC_term_minus
             )
         )
         return result
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
-    def ddelt_Gamma_nTOp_FM_dp(self, p, x, xnu, me=const.me):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None, None))
+    def ddelt_Gamma_nTOp_FM_dp(self, p, x, xnu, me=const.me, xi_nu=0.):
         """
         Integrand over momentum for finite mass corrections to the n -> p
         rate. 
@@ -931,6 +968,9 @@ class WeakRates(eqx.Module):
             electron mass. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -941,10 +981,10 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (115). 
         """
 
-        return self.ddelt_Gamma_FM_dp(p, x, xnu, 1, me)
+        return self.ddelt_Gamma_FM_dp(p, x, xnu, 1, me, xi_nu)
 
-    @eqx.filter_vmap(in_axes=(None, 0, None, None, None))
-    def ddelt_Gamma_pTOn_FM_dp(self, p, x, xnu, me=const.me):
+    @eqx.filter_vmap(in_axes=(None, 0, None, None, None, None))
+    def ddelt_Gamma_pTOn_FM_dp(self, p, x, xnu, me=const.me, xi_nu=0.):
         """
         Integrand over momentum for finite mass corrections to the p -> n 
         rate. 
@@ -962,6 +1002,9 @@ class WeakRates(eqx.Module):
             electron mass. 
         me : float, optional
             Electron mass in MeV.  Defaults to const.me.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter, mu_nu_e / T_nu_e.
+            Defaults to 0 (no lepton asymmetry).
 
         Returns
         -------
@@ -972,4 +1015,4 @@ class WeakRates(eqx.Module):
         See Pitrou+ 1801.08023 Eq. (115). 
         """
 
-        return self.ddelt_Gamma_FM_dp(p, x, xnu, -1, me)
+        return self.ddelt_Gamma_FM_dp(p, x, xnu, -1, me, xi_nu)
