@@ -267,8 +267,7 @@ class WeakRates(eqx.Module):
             # NOTE: these tables are pre-tabulated assuming SBBN, i.e.
             # xi_nu = 0, and so do not track a lepton asymmetry. The
             # residual xi_nu dependence of these sub-percent
-            # corrections is neglected. (PRyMordial recomputes the
-            # equivalent quantity on the fly with xi_nu in Chitilde.)
+            # corrections is neglected.
             thermal_rates = jnp.array([
                 jnp.interp(
                     Tg, 
