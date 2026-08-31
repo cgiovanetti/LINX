@@ -242,7 +242,7 @@ class BackgroundModel(eqx.Module):
 
         H = thermo.Hubble(rho_EM + rho_nu + rho_extra)
 
-        C_rho_nue, C_rho_numu, _, _ = thermo.collision_terms_std(
+        C_rho_nue, C_rho_numu, C_n_nue, C_n_numu = thermo.collision_terms_std(
             T_g, T_nu, T_nu, me=me, decoupled=self.decoupled, use_FD=self.use_FD, collision_me=self.collision_me
         )
 
@@ -252,4 +252,16 @@ class BackgroundModel(eqx.Module):
         dT_g_dt = drho_EM_dt / drho_EM_dT_g
         dT_nu_dt = drho_nu_dt / drho_nu_dT_nu
 
+        #P_e = thermo.rho_nue_std(T_g, me=me) / 3
+        #dndt_e = C_n_nue(T_g, T_nu, T_nu, me=me, decoupled=self.decoupled, use_FD=self.use_FD, collision_me=self.collision_me)
+        
+        #dmue_dt = -(-3.* H *( (thermo.rho_nue_std+P_e) * thermo.dn_nue_dT_nue_std - thermo.n_nue_std * thermo.drho_nue_dT_nue_std) + thermo.dn_nue_dT_nue_std * thermo.drho_nue_dT_nue_std - thermo.drho_nue_dT_nue_std * dndt_e )/(thermo.dn_nue_dmu_nue_std * thermo.drho_nue_dT_nue_std - thermo.dn_nue_dT_nue_std * thermo.drho_nue_dmu_nue_std)
+        
+        
+        #P_mu = thermo.rho_numt_std(T_nu, me=me) / 3
+        #dndt_mu = C_n_numu(T_g, T_nu, T_nu, me=me, decoupled=self.decoupled, use_FD=self.use_FD, collision_me=self.collision_me)
+
+        #dmunu_dt = -(-3.*H*( (thermo.rho_numt_std+P_mu)* thermo.dn_numt_dT_numt_std - thermo.n_numt.std * thermo.drho_numt_dT_numt_std) + thermo.dn_numt_dT_numt_std * thermo.drho_numt_dT_numt_std - thermo.drho_numt_dT_numt_std * dndt_mu )/(thermo.dn_numt_dmu_numt_std * thermo.drho_numt_dT_numt_std - thermo.dn_numt_dT_numt_std * thermo.drho_numt_dmu_numt_std)
+
         return H, dT_g_dt, dT_nu_dt 
+        #return H, dT_g_dt, dT_nu_dt, dmue_dt, dmunu_dt
