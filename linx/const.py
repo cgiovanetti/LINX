@@ -77,8 +77,12 @@ GF = 1.1663787e-5*1.e-6 # MeV-2
 sW2 = 0.5*(1.-jnp.sqrt(1.-2.*jnp.sqrt(2.)*jnp.pi*aFS/(GF*mZ**2)))
 
 # Electron and muon coupling to Z 
-geL, geR, gmuL, gmuR = 0.727, 0.233, -0.273, 0.233 #from NuDec_Const
-#geL, geR, gmuL, gmuR = 1./2.+sW2, sW2, -1./2.+sW2, sW2
+# geL, geR, gmuL, gmuR = 1./2.+sW2, sW2, -1./2.+sW2, sW2 
+# Use more precise effective nu-e and nu-mu/tau couplings 
+# to e^- as relevant for E < 10 MeV with low-energy radiative
+# corrections baked in to match nudec_BSM_v2.
+geL, geR, gmuL, gmuR = 0.727, 0.233, -0.273, 0.233  
+
 
 # G_Newton in MeV^-2
 GN  = 6.70883e-39*1e-6
