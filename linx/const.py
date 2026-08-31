@@ -1,11 +1,6 @@
-try:
-    import jax
-    import jax.numpy as jnp
-    jax.config.update("jax_enable_x64", True)  # need this to enable float64
-except ImportError:
-    import numpy as np
-    jnp = np
-    jax = None
+import jax
+import jax.numpy as jnp
+jax.config.update("jax_enable_x64", True) # need this to enable float64
 
 from linx.special_funcs import zeta_3 
 
