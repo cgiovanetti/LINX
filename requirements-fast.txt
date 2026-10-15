@@ -1,0 +1,12 @@
+jax==0.4.28
+jaxlib==0.4.28
+diffrax==0.6.0
+equinox==0.11.10
+lineax==0.0.7
+optimistix==0.0.10
+jaxtyping==0.3.9
+numpy==2.4.6
+
+# interpax must be installed --no-deps as a sidecar, because interpax>=0.3.12
+# hard-requires jax>=0.4.30. 
+# python -m pip install --no-deps interpax==0.3.1
