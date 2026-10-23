@@ -316,8 +316,8 @@ class AbundanceModel(eqx.Module):
             ODETerm(self.Y_prime), solver,
             t0=t_start, t1=t_end, dt0=None, y0=Y_i,
             args=(
-                a_vec, t_vec, T_g_vec, T_interval_nTOp, nTOp_frwrd,
-                nTOp_bkwrd, eta_fac, tau_n_fac, nuclear_rates_q
+                jnp.log(a_vec), jnp.log(t_vec), jnp.log(T_g_vec), T_interval_nTOp, 
+                nTOp_frwrd, nTOp_bkwrd, eta_fac, tau_n_fac, nuclear_rates_q
             ),
             saveat=saveat,
             stepsize_controller=PIDController(
@@ -506,9 +506,9 @@ class AbundanceModel(eqx.Module):
         
         """
 
-        a_vec_in    = args[0]
-        t_vec_in    = args[1]
-        T_g_vec_in  = args[2]
+        log_a_vec_in    = args[0]
+        log_t_vec_in    = args[1]
+        log_T_g_vec_in  = args[2]
         T_interval_in = args[3]
         nTOp_frwrd_vec_in = args[4]
         nTOp_bkwrd_vec_in = args[5]
@@ -516,13 +516,12 @@ class AbundanceModel(eqx.Module):
         tau_n_fac = args[7] 
         nuclear_rates_q = args[8]
         
-        a_in  = a_vec_in[0]
-        a_fin = a_vec_in[-1]
+        log_t = jnp.log(t)
 
-        a = jnp.interp(
-            t, t_vec_in, a_vec_in,
-            left=a_in,right=a_fin
-        )
+        a = jnp.exp(jnp.interp(
+            log_t, log_t_vec_in, log_a_vec_in,
+            left=log_a_vec_in[0], right=log_a_vec_in[-1]
+        ))
         
         # Baryon density rescaled by eta_fac. 
         n0B = eta_fac*const.n0CMB*const.eta0
@@ -531,7 +530,7 @@ class AbundanceModel(eqx.Module):
         rhoBBN = rho0BmaOvermB * const.MeV4_to_gcmm3/a**3 
 
         T_t = jnp.interp(
-            t, t_vec_in, T_g_vec_in, left=T_g_vec_in[0],right=T_g_vec_in[-1]
+            log_t, log_t_vec_in, log_T_g_vec_in, left=log_T_g_vec_in[0],right=log_T_g_vec_in[-1]
         )
 
         dY = self.nuclear_net(
