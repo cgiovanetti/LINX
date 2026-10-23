@@ -35,7 +35,8 @@ class BackgroundModel(eqx.Module):
         Max number of steps for background solve.  Default is 512.
     n_out: int, optional
         Number of points log-spaced on interpolation grid of thermodynamics solution.  
-        Default is 4096.
+        Default is 512.  It is recommended you raise this to 1024 or more if you need
+        LINX gradients.
     throw : bool, optional
         Whether to raise exceptions on solver failure. Default is `True`.
         Set to `False` for parameter scans where some combinations may fail.
@@ -50,7 +51,7 @@ class BackgroundModel(eqx.Module):
     n_out : int
     throw : bool
 
-    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True, throw=True, max_steps=512, n_out=4096): 
+    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True, throw=True, max_steps=512, n_out=512): 
 
         """
         Initialize the BackgroundModel with thermodynamic options.
@@ -72,7 +73,8 @@ class BackgroundModel(eqx.Module):
             Max number of steps for background solve.  Default is 512.
         n_out: int, optional
             Number of log-spaced points on interpolation grid of thermodynamics solution.  
-            Default is 4096.
+            Default is 512.  It is recommended you raise this to 1024 or more if you need
+            LINX gradients.
         throw : bool, optional
             If True, raise exceptions on solver failure. Default is True.
             Set to False for parameter scans where some combinations may fail.
