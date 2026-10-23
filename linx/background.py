@@ -31,6 +31,11 @@ class BackgroundModel(eqx.Module):
         Whether to use leading order QED correction. Default is `True`.
     NLO : bool, optional
         Whether to use next-to-leading order QED correction. Default is True.
+    max_steps : int, optional
+        Max number of steps for background solve.  Default is 512.
+    n_out: int, optional
+        Number of points log-spaced on interpolation grid of thermodynamics solution.  
+        Default is 4096.
     throw : bool, optional
         Whether to raise exceptions on solver failure. Default is `True`.
         Set to `False` for parameter scans where some combinations may fail.
@@ -42,9 +47,10 @@ class BackgroundModel(eqx.Module):
     LO : bool
     NLO : bool
     max_steps : int
+    n_out : int
     throw : bool
 
-    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True, throw=True, max_steps=512): 
+    def __init__(self, decoupled=False, use_FD=True, collision_me=True, LO=True, NLO = True, throw=True, max_steps=512, n_out=4096): 
 
         """
         Initialize the BackgroundModel with thermodynamic options.
@@ -62,6 +68,11 @@ class BackgroundModel(eqx.Module):
             If True, include leading order QED corrections. Default is True.
         NLO : bool, optional
             If True, include next-to-leading order QED corrections. Default is True.
+        max_steps : int, optional
+            Max number of steps for background solve.  Default is 512.
+        n_out: int, optional
+            Number of log-spaced points on interpolation grid of thermodynamics solution.  
+            Default is 4096.
         throw : bool, optional
             If True, raise exceptions on solver failure. Default is True.
             Set to False for parameter scans where some combinations may fail.
@@ -73,6 +84,7 @@ class BackgroundModel(eqx.Module):
         self.LO = LO
         self.NLO = NLO
         self.max_steps = max_steps
+        self.n_out = n_out
         self.throw = throw
 
     @eqx.filter_jit
@@ -98,10 +110,6 @@ class BackgroundModel(eqx.Module):
             Relative tolerance of the abundance solver. Default is `1e-8`.  
         atol : float, optional
             Absolute tolerance of the abundance solver. Default is `1e-10`. 
-        max_steps : int, optional
-            Maximum number of steps taken by the solver. Default is `4096`. 
-            Increasing this slows down the code, while decreasing this could 
-            mean that the solver cannot complete the solution. 
         solver : Diffrax ODE solver 
             The Diffrax ODE solver to use. A stiff solver is recommended. 
             Default is the Tsitouras' 5/4 solver. 
@@ -150,7 +158,7 @@ class BackgroundModel(eqx.Module):
         sol = diffeqsolve(
             ODETerm(self.dY), solver, args=(lna_init, rho_extra_init, me),
             t0 = t0, t1=jnp.inf, dt0=None, y0=Y0, 
-            saveat=SaveAt(steps=True), event=Event(T_EM_check),
+            saveat=SaveAt(t0=True, t1=True, dense=True), event=Event(T_EM_check),
             stepsize_controller=PIDController(
                 rtol=rtol, atol=atol
             ), 
@@ -158,41 +166,23 @@ class BackgroundModel(eqx.Module):
             throw=self.throw
         )
 
-        a_vec = jnp.exp(sol.ys[0])
-        rho_g_vec = rho_massless_BE_v(sol.ys[1], 0., 2) 
-        rho_nu_vec = rho_massless_FD_v(sol.ys[2], 0., 2)
         
-        # These vectors always have max_steps entries so that jit and grad 
-        # work but the solver stops before hitting max_steps. Find the last 
-        # legitimate step made by the solver, when T_g drops below T_end.
 
-        last_step_ind = jnp.max(
-            jnp.argwhere(
-                sol.ys[1] < T_end,
-                size=self.max_steps
-            )[:,0]
-        )
+        t_vec = jnp.exp(jnp.linspace(
+            jnp.log(sol.ts[0]), jnp.log(sol.ts[-1]), self.n_out
+            ))
+        t_vec = t_vec.at[0].set(sol.ts[0]).at[-1].set(sol.ts[-1])
+        lna_vec, T_EM_vec, T_nu_vec = jax.vmap(sol.evaluate)(t_vec)
 
-
-        # Set every step after this in all vectors to be identical, 
-        # so that there is no effect on interpolation. 
-        t_vec = jnp.where(sol.ts == jnp.inf, sol.ts[last_step_ind], sol.ts)
-        a_vec = jnp.where(a_vec == jnp.inf, a_vec[last_step_ind], a_vec)
-        rho_g_vec = jnp.where(
-            rho_g_vec == jnp.inf, rho_g_vec[last_step_ind], rho_g_vec
-        )
-        rho_nu_vec = jnp.where(
-            rho_nu_vec == jnp.inf, rho_nu_vec[last_step_ind], rho_nu_vec
-        )
+        a_vec = jnp.exp(lna_vec)
+        rho_g_vec = rho_massless_BE_v(T_EM_vec, 0., 2)
+        rho_nu_vec = rho_massless_FD_v(T_nu_vec, 0., 2)
         
         # Trivial relation between rho_extra and a. 
         rho_extra_vec = rho_extra_init * (jnp.exp(lna_init)**4 / a_vec**4)
 
         # Rescale a so that the present day CMB temperature is correct.
-        final_a = const.T0CMB / (
-            sol.ys[1][last_step_ind]
-        )
-        
+        final_a = const.T0CMB / T_EM_vec[-1]
         a_vec  *= final_a / a_vec[-1]
 
         # old version -- used first step of solve and not initial a
