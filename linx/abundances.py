@@ -529,9 +529,9 @@ class AbundanceModel(eqx.Module):
         # number density times amu. 
         rhoBBN = rho0BmaOvermB * const.MeV4_to_gcmm3/a**3 
 
-        T_t = jnp.interp(
+        T_t = jnp.exp(jnp.interp(
             log_t, log_t_vec_in, log_T_g_vec_in, left=log_T_g_vec_in[0],right=log_T_g_vec_in[-1]
-        )
+        ))
 
         dY = self.nuclear_net(
             Y, T_t, rhoBBN, T_interval_in, nTOp_frwrd_vec_in,
