@@ -138,12 +138,34 @@ class NuclearRates(eqx.Module):
                     self.bkwrd_reaction_by_particle[i].append(rxn.name)
             
             self.reactions_names.append(rxn.name)
+    
+    def precompute_rate_tables(self, nuclear_rates_q=None):
+        """
+        Pre-compute the per-reaction rate tables.
+
+        Parameters
+        ----------
+        nuclear_rates_q : array, optional
+            Rescaling parameter of expsigma in nuclear rate. Default
+            is None (no rescaling).
+
+        Returns
+        -------
+        list
+            One entry per reaction (in order of `self.reactions`), as returned 
+            by `Reaction.frwrd_rate_table`.
+        """
+
+        if nuclear_rates_q is None:
+            nuclear_rates_q = jnp.array([0. for _ in self.reactions])
+        return [rxn.frwrd_rate_table(nuclear_rates_q[i]) for i, rxn in enumerate(self.reactions)]
             
 
     @eqx.filter_jit
     def __call__(
         self, Y, T_t, rhoBBN, T_interval, 
-        nTOp_frwrd_vec, nTOp_bkwrd_vec, tau_n_fac=1., nuclear_rates_q=None
+        nTOp_frwrd_vec, nTOp_bkwrd_vec, tau_n_fac=1., nuclear_rates_q=None,
+        rate_tables=None
     ): 
         """
         Returns the rate of change of the abundances.  
@@ -169,6 +191,9 @@ class NuclearRates(eqx.Module):
         nuclear_rates_q : array
             Rescaling parameter of expsigma in nuclear rate. If None, 
             no rescaling is assumed.
+        rate_tables : list, optional
+            Precomputed rate tables (avoid rebuilding them on every ODE step).
+            Defaults to None, meaning they built once given `nuclear_rates_q`.
 
         Returns
         -------
@@ -176,9 +201,11 @@ class NuclearRates(eqx.Module):
             dY/dt in s^-1. Same dimensions as Y. 
         """
 
-        if nuclear_rates_q is None: 
+        if rate_tables is None: 
 
-            nuclear_rates_q = jnp.array([0. for _ in self.reactions])
+            rate_tables = self.precompute_rate_tables(nuclear_rates_q)  # nuclear_rates_q = None
+                                                                        # is handled appropriately
+                                                                        # in this fn
 
         dYdt_vec = jnp.zeros(len(Y))
 
@@ -204,13 +231,13 @@ class NuclearRates(eqx.Module):
 
         # These functions take temperature in K. 
         frwrd_rate_params = {
-            rxn.name:self.frwrd_rate_param[rxn.name](
-                T_t / const.kB, nuclear_rates_q[i]
+            rxn.name:rxn.frwrd_rate_from_table(
+                T_t / const.kB, rate_tables[i]
             ) for i,rxn in enumerate(self.reactions)
         } 
         bkwrd_rate_params = {
-            rxn.name:self.bkwrd_rate_param[rxn.name](
-                T_t / const.kB, nuclear_rates_q[i]
+            rxn.name:rxn.bkwrd_rate_from_table(
+                T_t / const.kB, rate_tables[i]
             ) for i,rxn in enumerate(self.reactions)
         }
 
