@@ -11,11 +11,11 @@ LINX
 
 Installation
 ------------
-LINX is on PyPI as ``linx-bbn``, and is imported as ``linx``::
+LINX is pip installable!  In a clean conda environment, run
 
     pip install linx-bbn
 
-The PyPI package named ``linx`` is unrelated and also installs a ``linx`` module, so do not install it alongside LINX.  For installing from source, or with the pinned dependency versions that give faster runtimes, please visit our `GitHub <https://github.com/cgiovanetti/LINX>`_.
+For installing from source, or with the pinned dependency versions that give faster runtimes, please visit our `GitHub <https://github.com/cgiovanetti/LINX>`_.
 
 Module Structure
 ----------------
