@@ -1,0 +1,76 @@
+name: Publish to PyPI
+
+# Publishing a GitHub release (tag vX.Y.Z) uploads linx-bbn X.Y.Z to PyPI.
+# Running this workflow by hand uploads a dev build to TestPyPI instead.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # hatch-vcs reads the version from the git tag
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine check --strict dist/*
+
+      - name: Smoke-test the wheel
+        run: |
+          pip install dist/*.whl
+          # Run outside the checkout so the installed package is imported, not ./linx
+          cd "$RUNNER_TEMP"
+          python -c "
+          import linx, linx.background, linx.abundances
+          from linx.nuclear import NuclearRates
+          for net in ['key_recommended', 'key_PRIMAT_2018', 'key_PRIMAT_2023', 'key_YOF']:
+              NuclearRates(nuclear_net=net)
+          print('linx imported from', linx.__file__)
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write  # trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  publish-pypi:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

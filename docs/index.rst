@@ -11,7 +11,11 @@ LINX
 
 Installation
 ------------
-To download and install LINX, please visit our `GitHub <https://github.com/cgiovanetti/LINX>`_.  There you will find detailed instructions for installing LINX and its dependencies.
+LINX is pip installable!  In a clean conda environment, run
+
+    pip install linx-bbn
+
+For installing from source, or with the pinned dependency versions that give faster runtimes, please visit our `GitHub <https://github.com/cgiovanetti/LINX>`_.
 
 Module Structure
 ----------------
