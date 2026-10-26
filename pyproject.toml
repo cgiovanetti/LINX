@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.27", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+# The PyPI name `linx` belongs to an unrelated project; the import name is still `linx`.
+name = "linx-bbn"
+dynamic = ["version"]
+description = "A fast, differentiable, and extensible Big Bang Nucleosynthesis package in JAX"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.11"
+authors = [
+    { name = "Cara Giovanetti" },
+    { name = "Mariangela Lisanti" },
+    { name = "Hongwan Liu" },
+    { name = "Siddharth Mishra-Sharma" },
+    { name = "Joshua T. Ruderman" },
+]
+keywords = ["cosmology", "big bang nucleosynthesis", "BBN", "jax", "differentiable"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+# Keep in sync with requirements.txt
+dependencies = [
+    "diffrax==0.7.1",
+    "equinox>=0.12.0",
+    "interpax>=0.3.1",
+    "jax>=0.4.38",
+    "jaxlib>=0.4.38",
+    "numpy>=2.0",
+    "optimistix==0.0.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/cgiovanetti/LINX"
+Documentation = "https://linx.readthedocs.io"
+Issues = "https://github.com/cgiovanetti/LINX/issues"
+Paper = "https://arxiv.org/abs/2408.14538"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+# Untagged builds (TestPyPI dry runs) get X.Y.devN; (Test)PyPI rejects +local versions
+local_scheme = "no-local-version"
+
+[tool.hatch.build.targets.wheel]
+packages = ["linx"]
+exclude = ["*.ipynb"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/linx", "/README.md", "/LICENSE.txt"]
+exclude = ["*.ipynb"]
