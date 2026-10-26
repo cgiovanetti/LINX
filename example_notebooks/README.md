@@ -1,6 +1,7 @@
 This directory contains a set of pedagogical Jupyter noteboooks for users familiarizing themselves with LINX. 
 
 * [background_evolution](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/background_evolution.ipynb) explores the thermodynamic calculation performed in LINX to determine quantities like energy densities, Hubble, and Neff.
+* [Neff](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/Neff.ipynb) is a targeted follow-up to background_evolution that demonstrates how the input parameters to the LINX thermodynamics module map to Neff.
 * [NuisanceParametersImpact](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/NuisanceParametersImpact.ipynb) explores the impact of the uncertainties of BBN rates on final predicted abundances.
 * [weak_rates](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/weak_rates.ipynb) illustrates the impact of different settings for computing the rate of proton-neutron interconversion on the prediction for the primordial helium-4 abundance.
 * [Schramm](https://github.com/cgiovanetti/LINX/blob/main/example_notebooks/Schramm.ipynb) includes an example of a Schramm plot, or the primordial abundances as a function of the baryon density. 

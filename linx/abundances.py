@@ -124,6 +124,7 @@ class AbundanceModel(eqx.Module):
         a_vec=None, t_vec=None, 
         eta_fac=jnp.asarray(1.), tau_n_fac = jnp.asarray(1.), 
         nuclear_rates_q=None, me = const.me,
+        xi_nu=jnp.asarray(0.),
         Y_i=None, T_start=None, T_end=None, sampling_nTOp=150, 
         rtol=1e-6, atol=1e-9, solver=Kvaerno3(),
         max_steps=4096,
@@ -158,6 +159,13 @@ class AbundanceModel(eqx.Module):
             distribution. If not specified, will be taken to be `q = 0`. 
         me : float, optional
             Electron mass in MeV.  Defaults to `const.me`.
+        xi_nu : float, optional
+            Electron-neutrino degeneracy parameter,
+            `xi_nu = mu_nu_e / T_nu_e`, i.e. the lepton asymmetry
+            chemical potential in units of the neutrino temperature.
+            Positive values favour n -> p and therefore lower Yp.
+            Defaults to 0. Note that this enters the weak rates only; it
+            does NOT backreact on `rho_nu_vec` / N_eff / H.
         Y_i : tuple of float, optional
             Initial abundances :math:`n_i/n_b` for species. Length must be equal to 
             `self.nuclear_net.max_i_species`. Must specify `T_start` and `T_end` if not `None`. 
@@ -272,7 +280,8 @@ class AbundanceModel(eqx.Module):
 
         T_interval_nTOp, nTOp_frwrd, nTOp_bkwrd = self.weak_rates(
             jnp.array([T_g_vec, T_nu_vec]), 
-            T_start=T_start, T_end=T_end, sampling_nTOp=sampling_nTOp, me=me
+            T_start=T_start, T_end=T_end, sampling_nTOp=sampling_nTOp,
+            me=me, xi_nu=xi_nu
         )
 
         ##################################
@@ -309,8 +318,8 @@ class AbundanceModel(eqx.Module):
             ODETerm(self.Y_prime), solver,
             t0=t_start, t1=t_end, dt0=None, y0=Y_i,
             args=(
-                a_vec, t_vec, T_g_vec, T_interval_nTOp, nTOp_frwrd,
-                nTOp_bkwrd, eta_fac, tau_n_fac, rate_tables
+                jnp.log(a_vec), jnp.log(t_vec), jnp.log(T_g_vec), T_interval_nTOp, 
+                nTOp_frwrd, nTOp_bkwrd, eta_fac, tau_n_fac, rate_tables
             ),
             saveat=saveat,
             stepsize_controller=PIDController(
@@ -510,9 +519,9 @@ class AbundanceModel(eqx.Module):
         
         """
 
-        a_vec_in    = args[0]
-        t_vec_in    = args[1]
-        T_g_vec_in  = args[2]
+        log_a_vec_in    = args[0]
+        log_t_vec_in    = args[1]
+        log_T_g_vec_in  = args[2]
         T_interval_in = args[3]
         nTOp_frwrd_vec_in = args[4]
         nTOp_bkwrd_vec_in = args[5]
@@ -520,13 +529,12 @@ class AbundanceModel(eqx.Module):
         tau_n_fac = args[7] 
         rate_tables = args[8]
         
-        a_in  = a_vec_in[0]
-        a_fin = a_vec_in[-1]
+        log_t = jnp.log(t)
 
-        a = jnp.interp(
-            t, t_vec_in, a_vec_in,
-            left=a_in,right=a_fin
-        )
+        a = jnp.exp(jnp.interp(
+            log_t, log_t_vec_in, log_a_vec_in,
+            left=log_a_vec_in[0], right=log_a_vec_in[-1]
+        ))
         
         # Baryon density rescaled by eta_fac. 
         n0B = eta_fac*const.n0CMB*const.eta0
@@ -534,9 +542,9 @@ class AbundanceModel(eqx.Module):
         # number density times amu. 
         rhoBBN = rho0BmaOvermB * const.MeV4_to_gcmm3/a**3 
 
-        T_t = jnp.interp(
-            t, t_vec_in, T_g_vec_in, left=T_g_vec_in[0],right=T_g_vec_in[-1]
-        )
+        T_t = jnp.exp(jnp.interp(
+            log_t, log_t_vec_in, log_T_g_vec_in, left=log_T_g_vec_in[0],right=log_T_g_vec_in[-1]
+        ))
 
         dY = self.nuclear_net(
             Y, T_t, rhoBBN, T_interval_in, nTOp_frwrd_vec_in,
