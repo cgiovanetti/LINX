@@ -1,7 +1,8 @@
 name: Publish to PyPI
 
 # Publishing a GitHub release (tag vX.Y.Z) uploads linx-bbn X.Y.Z to PyPI.
-# Running this workflow by hand uploads a dev build to TestPyPI instead.
+# Running this workflow by hand uploads a dev build to TestPyPI instead, under the
+# project name LINX there.
 on:
   release:
     types: [published]
@@ -19,6 +20,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
+      - name: Use the TestPyPI project name
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          sed -i 's/^name = "linx-bbn"$/name = "LINX"/' pyproject.toml
+          grep -q '^name = "LINX"$' pyproject.toml
 
       - name: Build sdist and wheel
         run: |
